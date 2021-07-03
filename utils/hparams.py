@@ -8,6 +8,7 @@ hps = {
     'restore_epoch': None,  # continue training from a specific saved point
     'start_epoch': 0,
     'lr': 0.01,  # starting learning rate
+    'lr_decay': 0.5,
     'save_freq': 20,  # how often to create checkpoints
     'drop': 0.1,
     'bs': 64,
@@ -16,14 +17,8 @@ hps = {
 possible_nets = set(filename.split(".")[0] for filename in os.listdir('models'))
 
 
-def setup_hparams():
-    # for arg in args:
-    #     key, value = arg.split('=')
-    #     if key not in hps:
-    #         raise ValueError(key + ' is not a valid hyper parameter')
-    #     else:
-    #         hps[key] = value
-
+def setup_hparams(name):
+    hps['name'] = name
     # Invalid network check
     if hps['network'] not in possible_nets:
         raise ValueError("Invalid network.\nPossible ones include:\n - " + '\n - '.join(possible_nets))
@@ -51,7 +46,6 @@ def setup_hparams():
     # create checkpoint directory
     hps['model_save_dir'] = os.path.join(os.getcwd(), 'checkpoints', hps['name'])
 
-    if not os.path.exists(hps['model_save_dir']):
-        os.makedirs(hps['model_save_dir'])
+    os.makedirs(hps['model_save_dir'], exist_ok=True)
 
     return hps

@@ -14,7 +14,7 @@ nets = {
 def setup_network(hps):
     net = nets[hps['network']]()
     optimizer = torch.optim.SGD(net.parameters(), lr=hps['lr'], momentum=0.9, nesterov=True, weight_decay=0.0001)
-    scheduler = ReduceLROnPlateau(optimizer, mode='max', factor=0.75, patience=5, verbose=True)
+    scheduler = ReduceLROnPlateau(optimizer, mode='max', factor=hps['lr_decay'], patience=5, verbose=True)
 
     # Prepare logger
     logger = Logger()

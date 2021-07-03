@@ -2,7 +2,6 @@ import warnings
 import torch
 import torch.nn as nn
 from torch.cuda.amp import GradScaler
-from torch.optim.lr_scheduler import ReduceLROnPlateau
 from data.fer2013 import get_dataloaders
 from utils.checkpoint import save
 from utils.hparams import setup_hparams
@@ -77,7 +76,7 @@ def run(net, logger, hps, optimizer, scheduler):
 
 if __name__ == "__main__":
     # Important parameters
-    hps = setup_hparams()
+    hps = setup_hparams('early_layer')
     logger, net, optimizer, scheduler = setup_network(hps)
 
     run(net, logger, hps, optimizer, scheduler)
