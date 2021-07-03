@@ -41,7 +41,6 @@ class Vgg(nn.Module):
         self.bn5b = nn.BatchNorm2d(512)
 
         self.lin1 = nn.Linear(512, 512)
-        # self.lin2 = nn.Linear(4096, 4096)
 
         self.drop = nn.Dropout(p=drop)
         if self.attention:
@@ -50,7 +49,8 @@ class Vgg(nn.Module):
             self.attn2 = LinearAttentionBlock(in_features=512, normalize_attn=normalize_attn)
             self.attn3 = LinearAttentionBlock(in_features=512, normalize_attn=normalize_attn)
         if self.attention:
-            self.classify = nn.Linear(in_features=512 * 3, out_features=num_classes, bias=True)
+            self.lin2 = nn.Linear(512 * 3, 4096)
+            self.classify = nn.Linear(in_features=4096, out_features=num_classes, bias=True)
         else:
             self.classify = nn.Linear(in_features=512, out_features=num_classes, bias=True)
 
@@ -86,7 +86,8 @@ class Vgg(nn.Module):
             c3, g3 = self.attn3(l3, g)
             g = torch.cat((g1, g2, g3), dim=1)  # batch_sizexC
             # classification layer
-            x = self.classify(g)  # batch_sizexnum_classes
+            x = F.relu(self.drop(self.lin2(g)))
+            x = self.classify(x)  # batch_sizexnum_classes
         else:
             x = self.classify(g)
         return x
