@@ -34,7 +34,7 @@ def run(net, logger, hps, optimizer, scheduler):
 
     # best_acc = 0.0
     # best_loss = float("inf")
-    start_epoch = hps['restore_epoch'] + 1 if hps['restore_epoch'] is not None else hps['start_epoch']
+    start_epoch = hps['restore_epoch'] if hps['restore_epoch'] is not None else hps['start_epoch']
     print("Training", hps['name'], "on", device, " start_epoch: ", start_epoch)
 
     for epoch in range(start_epoch, hps['n_epochs']):
