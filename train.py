@@ -59,13 +59,14 @@ def run(net, logger, hps, optimizer, scheduler):
         if (epoch + 1) % hps['save_freq'] == 0:
             save(net, logger, hps, epoch + 1, optimizer, scheduler)
             logger.save_plt(hps)
-
+        learning_rate = optimizer.param_groups[0]['lr']
         print('Epoch %2d' % (epoch + 1),
               'Train Accuracy: %2.4f %%' % acc_tr,
               'Val Accuracy: %2.4f/%2.4f %%' % (acc_v, logger.best_acc),
               'Train Loss: %2.4f ' % loss_tr,
               'Val Loss: %2.4f/%2.4f ' % (loss_v, logger.best_loss),
-              sep='\t\t')
+              "LR: %2.4f " % learning_rate,
+              sep='\t')
 
     # Calculate performance on test set
     acc_test, loss_test = evaluate(net, testloader, criterion)
