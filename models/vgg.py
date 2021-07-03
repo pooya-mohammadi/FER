@@ -45,9 +45,9 @@ class Vgg(nn.Module):
         self.drop = nn.Dropout(p=drop)
         if self.attention:
             self.projector = ProjectorBlock(256, 512)
-            self.attn1 = LinearAttentionBlock(in_features=512, normalize_attn=normalize_attn)
-            self.attn2 = LinearAttentionBlock(in_features=512, normalize_attn=normalize_attn)
-            self.attn3 = LinearAttentionBlock(in_features=512, normalize_attn=normalize_attn)
+            self.attn1 = LinearAttentionBlock(in_features=512, input_w=10, input_h=10, normalize_attn=normalize_attn)
+            self.attn2 = LinearAttentionBlock(in_features=512, input_w=5, input_h=5, normalize_attn=normalize_attn)
+            self.attn3 = LinearAttentionBlock(in_features=512, input_w=2, input_h=2, normalize_attn=normalize_attn)
         if self.attention:
             self.lin2 = nn.Linear(512 * 3, 4096)
             self.classify = nn.Linear(in_features=4096, out_features=num_classes, bias=True)
