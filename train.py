@@ -53,7 +53,7 @@ def run(net, logger, hps, optimizer, scheduler):
         if acc_v > logger.best_acc:
             logger.best_acc = acc_v
             logger.best_loss = loss_v
-            save(net, logger, hps, epoch + 1, optimizer, scheduler)
+            save(net, logger, hps, epoch + 1, optimizer, scheduler, best=True)
             logger.save_plt(hps)
 
         if (epoch + 1) % hps['save_freq'] == 0:
