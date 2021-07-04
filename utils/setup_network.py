@@ -11,14 +11,15 @@ nets = {
 }
 
 
-def setup_network(hps):
+def setup_network(hps, get_best, device):
     net = nets[hps['network']]()
+    net = net.to(device)
     optimizer = torch.optim.SGD(net.parameters(), lr=hps['lr'], momentum=0.9, nesterov=True, weight_decay=0.0001)
     scheduler = ReduceLROnPlateau(optimizer, mode='max', factor=hps['lr_decay'], patience=5, verbose=True)
 
     # Prepare logger
     logger = Logger()
-    if hps['restore_epoch']:
-        restore(net, logger, hps, optimizer, scheduler)
+    if hps['restore_epoch'] or get_best:
+        restore(net, logger, hps, optimizer, scheduler, get_best)
 
     return logger, net, optimizer, scheduler

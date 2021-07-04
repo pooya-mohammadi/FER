@@ -23,10 +23,13 @@ def save(net, logger, hps, epoch, optimizer, scheduler, best=False):
     torch.save(checkpoint, path)
 
 
-def restore(net, logger, hps, optimizer, scheduler):
+def restore(net, logger, hps, optimizer, scheduler, get_best):
     """ Load back the model and logger from a given checkpoint
         epoch detailed in hps['restore_epoch'], if available"""
-    path = os.path.join(hps['model_save_dir'], 'epoch_' + str(hps['restore_epoch']))
+    if get_best:
+        path = os.path.join(hps['model_save_dir'], 'best')
+    else:
+        path = os.path.join(hps['model_save_dir'], 'epoch_' + str(hps['restore_epoch']))
 
     if os.path.exists(path):
         try:
@@ -38,7 +41,7 @@ def restore(net, logger, hps, optimizer, scheduler):
                 optimizer.load_state_dict(checkpoint['optimizer'])
             if 'scheduler' in checkpoint:
                 scheduler.load_state_dict(checkpoint['scheduler'])
-            print("Network Restored!")
+            print(f"Network Restored from {path}!")
 
         except Exception as e:
             print("Restore Failed! Training from scratch.")

@@ -17,13 +17,13 @@ hps = {
 possible_nets = set(filename.split(".")[0] for filename in os.listdir('models'))
 
 
-def setup_hparams(name):
+def setup_hparams(name, restore_epoch):
     hps['name'] = name
-    # Invalid network check
+    hps['restore_epoch'] = restore_epoch
+
     if hps['network'] not in possible_nets:
         raise ValueError("Invalid network.\nPossible ones include:\n - " + '\n - '.join(possible_nets))
 
-    # invalid parameter check
     try:
         hps['n_epochs'] = int(hps['n_epochs'])
         hps['start_epoch'] = int(hps['start_epoch'])
@@ -40,7 +40,7 @@ def setup_hparams(name):
         if hps['n_epochs'] < 20:
             hps['save_freq'] = min(5, hps['n_epochs'])
 
-    except Exception as e:
+    except Exception:
         raise ValueError("Invalid input parameters")
 
     # create checkpoint directory
