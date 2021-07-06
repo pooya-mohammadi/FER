@@ -75,6 +75,6 @@ def run(net, logger, hps, optimizer, scheduler):
 
 
 if __name__ == "__main__":
-    hps = setup_hparams('early_layer', restore_epoch=25)
-    logger, net, optimizer, scheduler = setup_network(hps, get_best=True, device=device)
+    hps = setup_hparams('vgg_big', restore_epoch=0, network='vgg')
+    logger, net, optimizer, scheduler = setup_network(hps, get_best=False, device=device)
     run(net, logger, hps, optimizer, scheduler)

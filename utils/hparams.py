@@ -11,15 +11,16 @@ hps = {
     'lr_decay': 0.5,
     'save_freq': 20,  # how often to create checkpoints
     'drop': 0.1,
-    'bs': 64,
+    'bs': 32,
 }
 
 possible_nets = set(filename.split(".")[0] for filename in os.listdir('models'))
 
 
-def setup_hparams(name, restore_epoch):
+def setup_hparams(name, restore_epoch, network):
     hps['name'] = name
     hps['restore_epoch'] = restore_epoch
+    hps['network'] = network
 
     if hps['network'] not in possible_nets:
         raise ValueError("Invalid network.\nPossible ones include:\n - " + '\n - '.join(possible_nets))
