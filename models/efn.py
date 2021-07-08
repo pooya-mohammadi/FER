@@ -3,6 +3,7 @@ import torch.nn.functional as F
 import torchvision
 import timm
 
+
 class EfficientNet(nn.Module):
     def __init__(self, pretrained=True, drop=0.1):
         super().__init__()
@@ -14,6 +15,6 @@ class EfficientNet(nn.Module):
         # print(x.shape)
         x = x.repeat(1, 3, 1, 1)
         # print(x.shape)
-        
+
         x = self.model(x)
         return x

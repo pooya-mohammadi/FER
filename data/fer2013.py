@@ -82,9 +82,9 @@ def get_dataloaders(path='../data/', bs=64, augment=True):
     val = CustomDataset(xval, yval, test_transform)
     test = CustomDataset(xtest, ytest, test_transform)
 
-    trainloader = DataLoader(train, batch_size=bs, shuffle=True, num_workers=3)
-    valloader = DataLoader(val, batch_size=bs, shuffle=True, num_workers=3)
-    testloader = DataLoader(test, batch_size=bs, shuffle=True, num_workers=3)
+    trainloader = DataLoader(train, batch_size=bs, shuffle=True, num_workers=6)
+    valloader = DataLoader(val, batch_size=bs, shuffle=True, num_workers=6)
+    testloader = DataLoader(test, batch_size=bs, shuffle=True, num_workers=6)
 
     return trainloader, valloader, testloader
 
