@@ -64,7 +64,7 @@ def run(net, logger, hps, optimizer, scheduler):
               'Val Accuracy: %2.4f/%2.4f %%' % (acc_v, logger.best_acc),
               'Train Loss: %2.4f ' % loss_tr,
               'Val Loss: %2.4f/%2.4f ' % (loss_v, logger.best_loss),
-              "LR: %2.4f " % learning_rate,
+              "LR: %2.6f " % learning_rate,
               sep='\t')
         save(net, logger, hps, optimizer, scheduler, name='last')
 
