@@ -3,10 +3,10 @@ import os
 import torch
 
 
-def save(net, logger, hps, epoch, optimizer, scheduler, best=False):
+def save(net, logger, hps, optimizer, scheduler, name):
     # Create the path the checkpint will be saved at using the epoch number
 
-    path = os.path.join(hps['model_save_dir'], 'epoch_' + str(epoch))
+    # path = os.path.join(hps['model_save_dir'], 'epoch_' + str(epoch))
 
     # create a dictionary containing the logger info and model info that will be saved
     checkpoint = {
@@ -17,10 +17,9 @@ def save(net, logger, hps, epoch, optimizer, scheduler, best=False):
     }
 
     # save checkpoint
-    if best:
-        best_path = os.path.join(hps['model_save_dir'], 'best')
-        torch.save(checkpoint, best_path)
-    torch.save(checkpoint, path)
+    best_path = os.path.join(hps['model_save_dir'], name)
+    torch.save(checkpoint, best_path)
+    # torch.save(checkpoint, path)
 
 
 def restore(net, logger, hps, optimizer, scheduler, get_best):

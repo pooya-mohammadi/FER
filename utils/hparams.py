@@ -11,7 +11,7 @@ hps = {
     'lr_decay': 0.5,
     'save_freq': 20,  # how often to create checkpoints
     'drop': 0.1,
-    'bs': 32,
+    'bs': 64,
 }
 
 possible_nets = set(filename.split(".")[0] for filename in os.listdir('models'))
