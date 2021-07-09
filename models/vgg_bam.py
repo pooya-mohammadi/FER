@@ -50,18 +50,18 @@ class VggBAM(nn.Module):
 
         x = F.relu(self.bn2a(self.conv2a(x)))
         x = F.relu(self.bn2b(self.conv2b(x)))
-        x = self.pool(x)
         x = self.bam1(x)
+        x = self.pool(x)
 
         x = F.relu(self.bn3a(self.conv3a(x)))
         x = F.relu(self.bn3b(self.conv3b(x)))
-        x = self.pool(x)
         x = self.bam2(x)
+        x = self.pool(x)
 
         x = F.relu(self.bn4a(self.conv4a(x)))
         x = F.relu(self.bn4b(self.conv4b(x)))
-        x = self.pool(x)
         x = self.bam3(x)
+        x = self.pool(x)
 
         x = x.view(-1, 512 * 2 * 2)
         x = F.relu(self.drop(self.lin1(x)))

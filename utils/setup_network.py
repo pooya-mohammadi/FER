@@ -1,6 +1,5 @@
 import torch
 from torch.optim.lr_scheduler import ReduceLROnPlateau
-
 from models import vgg, efn, vgg_attention, vgg_bam
 from utils.checkpoint import restore
 from utils.logger import Logger
