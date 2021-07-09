@@ -8,7 +8,7 @@ hps = {
     'restore_epoch': None,  # continue training from a specific saved point
     'start_epoch': 0,
     'lr': 0.01,  # starting learning rate
-    'lr_decay': 0.5,
+    'lr_decay': 0.75,
     'save_freq': 20,  # how often to create checkpoints
     'drop': 0.1,
     'bs': 64,
