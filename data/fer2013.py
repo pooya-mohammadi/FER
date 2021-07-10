@@ -83,8 +83,8 @@ def get_dataloaders(path, bs, num_workers, crop_size, augment=True):
     mu, st = 0, 255
 
     test_transform = transforms.Compose([
-        # transforms.Scale(52),
-        transforms.TenCrop(40),
+        transforms.Pad(2 if crop_size == 48 else 0),
+        transforms.TenCrop(crop_size),
         transforms.Lambda(lambda crops: torch.stack([transforms.ToTensor()(crop) for crop in crops])),
         transforms.Lambda(
             lambda tensors: torch.stack([transforms.Normalize(mean=(mu,), std=(st,))(t) for t in tensors])),
