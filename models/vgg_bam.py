@@ -34,7 +34,7 @@ class VggBAM(nn.Module):
         self.bn4a = nn.BatchNorm2d(512)
         self.bn4b = nn.BatchNorm2d(512)
 
-        self.lin1 = nn.Linear(512 * 9 if self.crop == 48 else 4, 4096)
+        self.lin1 = nn.Linear(512 * (9 if self.crop == 48 else 4), 4096)
         self.lin2 = nn.Linear(4096, 4096)
 
         self.bam1 = BAM(128)
@@ -64,7 +64,7 @@ class VggBAM(nn.Module):
         x = self.bam3(x)
         x = self.pool(x)
 
-        x = x.view(-1, 512 * 9 if self.crop == 48 else 4)
+        x = x.view(-1, 512 * (9 if self.crop == 48 else 4))
         x = F.relu(self.drop(self.lin1(x)))
         x = F.relu(self.drop(self.lin2(x)))
         x = self.classifier(x)
@@ -74,6 +74,6 @@ class VggBAM(nn.Module):
 if __name__ == '__main__':
     from torchsummary import summary
 
-    crop = 48
+    crop = 40
     model = VggBAM(crop=crop).to('cuda')
     summary(model, (1, crop, crop))
