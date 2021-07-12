@@ -66,6 +66,6 @@ def run(net, logger, hps, optimizer, scheduler, num_workers):
 
 
 if __name__ == "__main__":
-    hps = setup_hparams('vgg_bam_3', restore_epoch=0, network='vgg_bam', crop_size=40)
-    logger, net, optimizer, scheduler = setup_network(hps, get_best=False, device=device)
+    hps = setup_hparams('vgg_bam_2', restore_epoch=65, network='vgg_bam', crop_size=40)
+    logger, net, optimizer, scheduler = setup_network(hps, get_best=True, device=device)
     run(net, logger, hps, optimizer, scheduler, num_workers=0)

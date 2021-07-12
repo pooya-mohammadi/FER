@@ -12,7 +12,7 @@ hps = {
     'save_freq': 20,  # how often to create checkpoints
     'drop': 0.1,
     'bs': 64,
-    'data_path': '../data',
+    'data_path': '../data/fer2013.csv',
     'crop_size': 40,
 
 }
