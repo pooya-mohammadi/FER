@@ -13,16 +13,18 @@ hps = {
     'drop': 0.1,
     'bs': 64,
     'data_path': '../data',
-    'crop_size': 48,
+    'crop_size': 40,
+
 }
 
 possible_nets = set(filename.split(".")[0] for filename in os.listdir('models'))
 
 
-def setup_hparams(name, restore_epoch, network):
+def setup_hparams(name, restore_epoch, network, **kwargs):
     hps['name'] = name
     hps['restore_epoch'] = restore_epoch
     hps['network'] = network
+    hps.update(kwargs)
 
     if hps['network'] not in possible_nets:
         raise ValueError("Invalid network.\nPossible ones include:\n - " + '\n - '.join(possible_nets))
@@ -50,5 +52,5 @@ def setup_hparams(name, restore_epoch, network):
     hps['model_save_dir'] = os.path.join(os.getcwd(), 'checkpoints', hps['name'])
 
     os.makedirs(hps['model_save_dir'], exist_ok=True)
-
+    print(hps)
     return hps

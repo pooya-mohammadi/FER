@@ -5,9 +5,9 @@ from models.bam import BAM
 
 
 class VggBAM(nn.Module):
-    def __init__(self, drop=0.2):
+    def __init__(self, drop=0.2, crop=40):
         super().__init__()
-
+        self.crop = crop
         self.conv1a = nn.Conv2d(in_channels=1, out_channels=64, kernel_size=3, padding=1)
         self.conv1b = nn.Conv2d(64, out_channels=64, kernel_size=3, padding=1)
 
@@ -34,7 +34,7 @@ class VggBAM(nn.Module):
         self.bn4a = nn.BatchNorm2d(512)
         self.bn4b = nn.BatchNorm2d(512)
 
-        self.lin1 = nn.Linear(512 * 3 * 3, 4096)
+        self.lin1 = nn.Linear(512 * 9 if self.crop == 48 else 4, 4096)
         self.lin2 = nn.Linear(4096, 4096)
 
         self.bam1 = BAM(128)
@@ -64,7 +64,7 @@ class VggBAM(nn.Module):
         x = self.bam3(x)
         x = self.pool(x)
 
-        x = x.view(-1, 512 * 3 * 3)
+        x = x.view(-1, 512 * 9 if self.crop == 48 else 4)
         x = F.relu(self.drop(self.lin1(x)))
         x = F.relu(self.drop(self.lin2(x)))
         x = self.classifier(x)
@@ -72,7 +72,8 @@ class VggBAM(nn.Module):
 
 
 if __name__ == '__main__':
-    from torchsummaryX import summary
+    from torchsummary import summary
 
-    model = VggBAM().to('cuda')
-    summary(model, torch.zeros((1, 1, 48, 48)).to('cuda'))
+    crop = 48
+    model = VggBAM(crop=crop).to('cuda')
+    summary(model, (1, crop, crop))

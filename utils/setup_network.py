@@ -13,7 +13,7 @@ nets = {
 
 
 def setup_network(hps, get_best, device):
-    net = nets[hps['network']]()
+    net = nets[hps['network']](crop=hps['crop_size'])
     net = net.to(device)
     optimizer = torch.optim.SGD(net.parameters(), lr=hps['lr'], momentum=0.9, nesterov=True, weight_decay=0.0001)
     scheduler = ReduceLROnPlateau(optimizer, mode='max', factor=hps['lr_decay'], patience=5, verbose=True)

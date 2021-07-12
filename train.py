@@ -13,11 +13,13 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
 def run(net, logger, hps, optimizer, scheduler, num_workers):
-    trainloader, valloader, testloader = get_dataloaders(path=hps['data_path'], bs=hps['bs'], num_workers=num_workers,
-                                                         crop_size=hps['crop_size'])
+    trainloader, valloader, testloader = get_dataloaders(path=hps['data_path'],
+                                                         bs=hps['bs'],
+                                                         num_workers=num_workers,
+                                                         crop_size=hps['crop_size']
+                                                         )
 
     net = net.to(device)
-
     scaler = GradScaler()
     criterion = nn.CrossEntropyLoss()
 
@@ -64,6 +66,6 @@ def run(net, logger, hps, optimizer, scheduler, num_workers):
 
 
 if __name__ == "__main__":
-    hps = setup_hparams('vgg_bam_3', restore_epoch=0, network='vgg_bam')
+    hps = setup_hparams('vgg_bam_3', restore_epoch=0, network='vgg_bam', crop_size=40)
     logger, net, optimizer, scheduler = setup_network(hps, get_best=False, device=device)
-    run(net, logger, hps, optimizer, scheduler, num_workers=6)
+    run(net, logger, hps, optimizer, scheduler, num_workers=0)
