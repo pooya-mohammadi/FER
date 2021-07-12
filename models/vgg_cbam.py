@@ -1,10 +1,10 @@
 import torch
 from torch.nn import functional as F
 from torch import nn
-from models.bam import BAM
+from models.cbam import CBAM
 
 
-class VggBAM(nn.Module):
+class VggCBAM(nn.Module):
     def __init__(self, drop=0.2, crop=40):
         super().__init__()
         self.crop = crop
@@ -37,14 +37,14 @@ class VggBAM(nn.Module):
         self.lin1 = nn.Linear(512 * (9 if self.crop == 48 else 4), 4096)
         self.lin2 = nn.Linear(4096, 4096)
 
-        self.bam1 = BAM(128)
-        self.bam2 = BAM(256)
-        self.bam3 = BAM(512)
+        self.cbam1 = CBAM(128)
+        self.cbam2 = CBAM(256)
+        self.cbam3 = CBAM(512)
 
         self.drop = nn.Dropout(p=drop)
         self.classifier = nn.Linear(4096, 7)
 
-    def forward(self, x, get_bam=False):
+    def forward(self, x, get_cbam=False):
         x = F.relu(self.bn1a(self.conv1a(x)))
         x = F.relu(self.bn1b(self.conv1b(x)))
         x = self.pool(x)
@@ -52,26 +52,26 @@ class VggBAM(nn.Module):
         x = F.relu(self.bn2a(self.conv2a(x)))
         x = F.relu(self.bn2b(self.conv2b(x)))
         before_bam1 = x
-        after_bam1 = self.bam1(before_bam1)
+        after_bam1 = self.cbam1(before_bam1)
         x = self.pool(after_bam1)
 
         x = F.relu(self.bn3a(self.conv3a(x)))
         x = F.relu(self.bn3b(self.conv3b(x)))
         before_bam2 = x
-        after_bam2 = self.bam2(before_bam2)
+        after_bam2 = self.cbam2(before_bam2)
         x = self.pool(after_bam2)
 
         x = F.relu(self.bn4a(self.conv4a(x)))
         x = F.relu(self.bn4b(self.conv4b(x)))
         before_bam3 = x
-        after_bam3 = self.bam3(before_bam3)
+        after_bam3 = self.cbam3(before_bam3)
         x = self.pool(after_bam3)
 
         x = x.view(-1, 512 * (9 if self.crop == 48 else 4))
         x = F.relu(self.drop(self.lin1(x)))
         x = F.relu(self.drop(self.lin2(x)))
         x = self.classifier(x)
-        if get_bam:
+        if get_cbam:
             return x, [(before_bam1, after_bam1), (before_bam2, after_bam2), (before_bam3, after_bam3)]
         return x
 
@@ -80,7 +80,7 @@ if __name__ == '__main__':
     from torchsummary import summary
 
     crop = 40
-    model = VggBAM(crop=crop).to('cuda')
+    model = VggCBAM(crop=crop).to('cuda')
     # model.eval()
     model(torch.zeros((1, 1, crop, crop)).to('cuda'))
     summary(model, (1, crop, crop))

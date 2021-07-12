@@ -16,7 +16,6 @@ class CustomDataset(Dataset):
         self.images = images
         self.labels = labels
         self.transform = transform
-
         self.augment = augment
 
     def __len__(self):
