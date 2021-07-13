@@ -71,19 +71,19 @@ def get_dataloaders(path, bs, num_workers, crop_size, augment=True):
 
         input: path to fer2013 csv file
         output: (Dataloader, Dataloader, Dataloader) """
+    if os.path.isdir(path):
+        fer2013_train, emotion_mapping_train = load_data(os.path.join(path, 'train.csv'))
+        fer2013_val, emotion_mapping_val = load_data(os.path.join(path, 'val.csv'))
+        fer2013_test, emotion_mapping_test = load_data(os.path.join(path, 'test.csv'))
+        xtrain, ytrain = prepare_data(fer2013_train)
+        xval, yval = prepare_data(fer2013_val)
+        xtest, ytest = prepare_data(fer2013_test)
+    else:
+        fer2013, emotion_mapping = load_data(path)
+        xtrain, ytrain = prepare_data(fer2013[fer2013['Usage'] == 'Training'])
+        xval, yval = prepare_data(fer2013[fer2013['Usage'] == 'PrivateTest'])
+        xtest, ytest = prepare_data(fer2013[fer2013['Usage'] == 'PublicTest'])
 
-    # fer2013_train, emotion_mapping_train = load_data(os.path.join(path, 'train.csv'))
-    # fer2013_val, emotion_mapping_val = load_data(os.path.join(path, 'val.csv'))
-    # fer2013_test, emotion_mapping_test = load_data(os.path.join(path, 'test.csv'))
-    # xtrain, ytrain = prepare_data(fer2013_train)
-    # xval, yval = prepare_data(fer2013_val)
-    # xtest, ytest = prepare_data(fer2013_test)
-
-    fer2013, emotion_mapping = load_data(path)
-
-    xtrain, ytrain = prepare_data(fer2013[fer2013['Usage'] == 'Training'])
-    xval, yval = prepare_data(fer2013[fer2013['Usage'] == 'PrivateTest'])
-    xtest, ytest = prepare_data(fer2013[fer2013['Usage'] == 'PublicTest'])
     mu, st = 0, 255
 
     test_transform = transforms.Compose([
