@@ -74,7 +74,7 @@ class ConvBNPRELU(nn.Module):
                               kernel_size=kernel_size,
                               padding=padding)
         self.bn = nn.BatchNorm2d(out_channel)
-        self.prelu = nn.PReLU()
+        self.prelu = nn.ReLU()
 
     def forward(self, x):
         return self.prelu(self.bn(self.conv(x)))
@@ -85,6 +85,5 @@ if __name__ == '__main__':
 
     crop = 40
     model = VggCBAM(crop=crop).to('cuda')
-    # model.eval()
     model(torch.zeros((1, 1, crop, crop)).to('cuda'))
     summary(model, (1, crop, crop))

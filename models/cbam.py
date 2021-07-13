@@ -48,13 +48,6 @@ class ChannelGate(nn.Module):
             elif pool_type == 'max':
                 max_pool = F.max_pool2d(x, (x.size(2), x.size(3)), stride=(x.size(2), x.size(3)))
                 channel_att_raw = self.mlp(max_pool)
-            elif pool_type == 'lp':
-                lp_pool = F.lp_pool2d(x, 2, (x.size(2), x.size(3)), stride=(x.size(2), x.size(3)))
-                channel_att_raw = self.mlp(lp_pool)
-            elif pool_type == 'lse':
-                # LSE pool only
-                lse_pool = logsumexp_2d(x)
-                channel_att_raw = self.mlp(lse_pool)
 
             if channel_att_sum is None:
                 channel_att_sum = channel_att_raw
@@ -85,12 +78,10 @@ class SpatialGate(nn.Module):
 
 
 class CBAM(nn.Module):
-    def __init__(self, gate_channels, reduction_ratio=16, pool_types=('avg', 'max'), no_spatial=False):
+    def __init__(self, gate_channels, reduction_ratio=16, pool_types=('avg', 'max')):
         super(CBAM, self).__init__()
         self.ChannelGate = ChannelGate(gate_channels, reduction_ratio, pool_types)
-        self.no_spatial = no_spatial
-        if not no_spatial:
-            self.SpatialGate = SpatialGate()
+        self.SpatialGate = SpatialGate()
 
     def forward(self, x):
         x_out = self.ChannelGate(x)

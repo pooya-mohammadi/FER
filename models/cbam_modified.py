@@ -22,24 +22,21 @@ class BasicConv(nn.Module):
         return x
 
 
-class Flatten(nn.Module):
-    def forward(self, x):
-        return x.view(x.size(0), -1)
-
-
 class ChannelGate(nn.Module):
-    def __init__(self, gate_channels, reduction_ratio=16, pool_types=('avg', 'max')):
+    def __init__(self, gate_channels, reduction_ratio=16):
         super(ChannelGate, self).__init__()
         self.gate_channels = gate_channels
         self.conv = nn.Sequential(
-            nn.Conv2d(gate_channels, gate_channels // reduction_ratio, kernel_size=(1, 1), stride=(1, 1),
-                      padding=(0, 0)),
-            nn.PReLU(),
-            nn.Conv2d(gate_channels // reduction_ratio, gate_channels, kernel_size=(1, 1), stride=(1, 1),
-                      padding=(0, 0)),
-
+            nn.Conv2d(gate_channels,
+                      gate_channels // reduction_ratio,
+                      kernel_size=(1, 1),
+                      stride=(1, 1)),
+            nn.ReLU(),
+            nn.Conv2d(gate_channels // reduction_ratio,
+                      gate_channels,
+                      kernel_size=(1, 1),
+                      stride=(1, 1)),
         )
-        self.pool_types = pool_types
 
     def forward(self, x):
         avg_pool = F.avg_pool2d(x, (x.size(2), x.size(3)))
@@ -61,14 +58,11 @@ class ChannelPool(nn.Module):
 class SpatialGate(nn.Module):
     def __init__(self):
         super(SpatialGate, self).__init__()
-        # kernel_size = 3
         self.compress = ChannelPool()
         self.conv = nn.Conv2d(2, 1, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
-        # self.spatial = BasicConv(2, 1, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), relu=False)
 
     def forward(self, x):
         x_compress = self.compress(x)
-        # x_out = self.spatial(x_compress)
         x_out = self.conv(x_compress)
         scale = F.sigmoid(x_out)  # broadcasting
         return x * scale
@@ -81,7 +75,6 @@ class CBAM(nn.Module):
         self.SpatialGate = SpatialGate()
 
     def forward(self, x):
-        module_input = x
-        x_out = self.ChannelGate(module_input)
+        x_out = self.ChannelGate(x)
         x_out = self.SpatialGate(x_out)
         return x_out + x
