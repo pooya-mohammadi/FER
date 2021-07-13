@@ -22,7 +22,7 @@ def correct_count(output, target, topk=(1,)):
     return res
 
 
-def evaluate(net, dataloader, criterion):
+def evaluate(net, dataloader, criterion, device):
     net = net.eval()
     loss_tr, n_samples = 0.0, 0.0
 
@@ -98,10 +98,10 @@ if __name__ == "__main__":
                                                          path=hps['data_path'])
 
     print("Train")
-    evaluate(net, trainloader, criterion)
+    evaluate(net, trainloader, criterion, device)
 
     print("Val")
-    evaluate(net, valloader, criterion)
+    evaluate(net, valloader, criterion, device)
 
     print("Test")
-    evaluate(net, testloader, criterion)
+    evaluate(net, testloader, criterion, device)
