@@ -20,9 +20,8 @@ hps = {
 possible_nets = set(filename.split(".")[0] for filename in os.listdir('models'))
 
 
-def setup_hparams(name, restore_epoch, network, **kwargs):
+def setup_hparams(name, network, **kwargs):
     hps['name'] = name
-    hps['restore_epoch'] = restore_epoch
     hps['network'] = network
     hps.update(kwargs)
 

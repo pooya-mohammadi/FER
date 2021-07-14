@@ -1,3 +1,4 @@
+import os
 import torch
 import torch.nn as nn
 from sklearn.metrics import precision_score, f1_score, recall_score, confusion_matrix
@@ -22,7 +23,7 @@ def correct_count(output, target, topk=(1,)):
     return res
 
 
-def evaluate(net, dataloader, criterion, device):
+def evaluate(net, dataloader, criterion, device, name, save_path):
     net = net.eval()
     loss_tr, n_samples = 0.0, 0.0
 
@@ -68,19 +69,24 @@ def evaluate(net, dataloader, criterion, device):
     acc1 = 100 * correct_count1 / n_samples
     acc2 = 100 * correct_count2 / n_samples
     loss = loss_tr / n_samples
-    print("--------------------------------------------------------")
-    print("Top 1 Accuracy: %2.6f %%" % acc1)
-    print("Top 2 Accuracy: %2.6f %%" % acc2)
-    print("Loss: %2.6f" % loss)
-    print("Precision: %2.6f" % precision_score(y_gt, y_pred, average='micro'))
-    print("Recall: %2.6f" % recall_score(y_gt, y_pred, average='micro'))
-    print("F1 Score: %2.6f" % f1_score(y_gt, y_pred, average='micro'))
-    print("Confusion Matrix:\n", confusion_matrix(y_gt, y_pred), '\n')
+    print_text = f"{name}\n"
+    print_text += "--------------------------------------------------------\n"
+    print_text += "Top 1 Accuracy: %2.6f %%" % acc1 + "\n"
+    print_text += "Top 2 Accuracy: %2.6f %%" % acc2 + "\n"
+    print_text += "Loss: %2.6f" % loss + "\n"
+    print_text += "Precision: %2.6f" % precision_score(y_gt, y_pred, average='micro') + "\n"
+    print_text += "Recall: %2.6f" % recall_score(y_gt, y_pred, average='micro') + "\n"
+    print_text += "F1 Score: %2.6f" % f1_score(y_gt, y_pred, average='micro') + "\n"
+    print_text += "Confusion Matrix:\n" + str(confusion_matrix(y_gt, y_pred)) + '\n' + "\n"
+    print(print_text)
+    with open(os.path.join(save_path, name + '.txt'), mode='w') as f:
+        f.write(print_text)
 
 
 if __name__ == "__main__":
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    hps = setup_hparams('vgg_cbam', restore_epoch=0, network='vgg_cbam', crop_size=40, data_path='../data')
+    hps = setup_hparams('vgg_cbam', network='vgg_cbam', crop_size=40, data_path='../data',
+                        cbam_blocks=(1, 2, 3), residual_cbam=False)
 
     # build network
     logger, net, optimizer, scheduler = setup_network(hps, get_best=True, device=device)
@@ -97,11 +103,17 @@ if __name__ == "__main__":
                                                          crop_size=40,
                                                          path=hps['data_path'])
 
-    print("Train")
-    evaluate(net, trainloader, criterion, device)
+    evaluate(net,
+             trainloader,
+             criterion,
+             device,
+             name='Train',
+             save_path=os.path.join('checkpoints', hps['name'])
 
-    print("Val")
-    evaluate(net, valloader, criterion, device)
+             )
 
-    print("Test")
-    evaluate(net, testloader, criterion, device)
+    evaluate(net, valloader, criterion, device, name='Val',
+             save_path=os.path.join('checkpoints', hps['name']))
+
+    evaluate(net, testloader, criterion, device, name='Test',
+             save_path=os.path.join('checkpoints', hps['name']))
