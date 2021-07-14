@@ -5,8 +5,9 @@ from models.cbam import CBAM
 
 
 class VggCBAM(nn.Module):
-    def __init__(self, drop=0.2, crop=40):
+    def __init__(self, drop=0.2, crop=40, cbam_blocks=(1, 2, 3)):
         super().__init__()
+        self.cbam_blocks = cbam_blocks
         self.crop = crop
         self.conv1a = nn.Conv2d(in_channels=1, out_channels=64, kernel_size=3, padding=1)
         self.conv1b = nn.Conv2d(64, out_channels=64, kernel_size=3, padding=1)
@@ -48,27 +49,39 @@ class VggCBAM(nn.Module):
     def forward(self, x, get_cbam=False):
         x = F.relu(self.bn1a(self.conv1a(x)))
         x = F.relu(self.bn1b(self.conv1b(x)))
-        before_bam0 = x
-        after_bam0 = self.cbam0(before_bam0)
-        x = self.pool(after_bam0)
+        if 0 in self.cbam_blocks:
+            before_bam0 = x
+            after_bam0 = self.cbam0(before_bam0)
+            x = self.pool(after_bam0)
+        else:
+            x = self.pool(x)
 
         x = F.relu(self.bn2a(self.conv2a(x)))
         x = F.relu(self.bn2b(self.conv2b(x)))
-        before_bam1 = x
-        after_bam1 = self.cbam1(before_bam1)
-        x = self.pool(after_bam1)
+        if 1 in self.cbam_blocks:
+            before_bam1 = x
+            after_bam1 = self.cbam1(before_bam1)
+            x = self.pool(after_bam1)
+        else:
+            x = self.pool(x)
 
         x = F.relu(self.bn3a(self.conv3a(x)))
         x = F.relu(self.bn3b(self.conv3b(x)))
-        before_bam2 = x
-        after_bam2 = self.cbam2(before_bam2)
-        x = self.pool(after_bam2)
+        if 2 in self.cbam_blocks:
+            before_bam2 = x
+            after_bam2 = self.cbam2(before_bam2)
+            x = self.pool(after_bam2)
+        else:
+            x = self.pool(x)
 
         x = F.relu(self.bn4a(self.conv4a(x)))
         x = F.relu(self.bn4b(self.conv4b(x)))
-        before_bam3 = x
-        after_bam3 = self.cbam3(before_bam3)
-        x = self.pool(after_bam3)
+        if 3 in self.cbam_blocks:
+            before_bam3 = x
+            after_bam3 = self.cbam3(before_bam3)
+            x = self.pool(after_bam3)
+        else:
+            x = self.pool(x)
 
         x = x.view(-1, 512 * (9 if self.crop == 48 else 4))
         x = F.relu(self.drop(self.lin1(x)))
