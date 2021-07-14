@@ -37,6 +37,7 @@ class VggCBAM(nn.Module):
         self.lin1 = nn.Linear(512 * (9 if self.crop == 48 else 4), 4096)
         self.lin2 = nn.Linear(4096, 4096)
 
+        self.cbam0 = CBAM(64)
         self.cbam1 = CBAM(128)
         self.cbam2 = CBAM(256)
         self.cbam3 = CBAM(512)
@@ -47,7 +48,9 @@ class VggCBAM(nn.Module):
     def forward(self, x, get_cbam=False):
         x = F.relu(self.bn1a(self.conv1a(x)))
         x = F.relu(self.bn1b(self.conv1b(x)))
-        x = self.pool(x)
+        before_bam0 = x
+        after_bam0 = self.cbam0(before_bam0)
+        x = self.pool(after_bam0)
 
         x = F.relu(self.bn2a(self.conv2a(x)))
         x = F.relu(self.bn2b(self.conv2b(x)))
