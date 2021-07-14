@@ -5,7 +5,7 @@ from models.blocks import ProjectorBlock, LinearAttentionBlock
 
 
 class Vgg(nn.Module):
-    def __init__(self, drop=0.2, attention=True, normalize_attn=True, num_classes=7):
+    def __init__(self, drop=0.2, attention=True, normalize_attn=True, num_classes=7, **kwargs):
         super().__init__()
         self.attention = attention
         self.conv1a = nn.Conv2d(in_channels=1, out_channels=64, kernel_size=3, padding=1)

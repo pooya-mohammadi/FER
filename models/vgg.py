@@ -3,7 +3,7 @@ import torch.nn.functional as F
 
 
 class Vgg(nn.Module):
-    def __init__(self, drop=0.4, attention=False, normalize_attn=True, num_classes=7):
+    def __init__(self, drop=0.4, attention=False, normalize_attn=True, num_classes=7, **kwargs):
         super().__init__()
         self.attention = attention
 

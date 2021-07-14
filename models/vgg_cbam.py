@@ -5,9 +5,10 @@ from models.cbam import CBAM
 
 
 class VggCBAM(nn.Module):
-    def __init__(self, drop=0.2, crop=40, cbam_blocks=(1, 2, 3)):
+    def __init__(self, drop=0.2, crop=40, **kwargs):
         super().__init__()
-        self.cbam_blocks = cbam_blocks
+        self.cbam_blocks = kwargs['cbam_blocks']
+        self.residual_cbam = kwargs['residual_cbam']
         self.crop = crop
         self.conv1a = nn.Conv2d(in_channels=1, out_channels=64, kernel_size=3, padding=1)
         self.conv1b = nn.Conv2d(64, out_channels=64, kernel_size=3, padding=1)
@@ -38,10 +39,10 @@ class VggCBAM(nn.Module):
         self.lin1 = nn.Linear(512 * (9 if self.crop == 48 else 4), 4096)
         self.lin2 = nn.Linear(4096, 4096)
 
-        self.cbam0 = CBAM(64)
-        self.cbam1 = CBAM(128)
-        self.cbam2 = CBAM(256)
-        self.cbam3 = CBAM(512)
+        self.cbam0 = CBAM(64, self.residual_cbam)
+        self.cbam1 = CBAM(128, self.residual_cbam)
+        self.cbam2 = CBAM(256, self.residual_cbam)
+        self.cbam3 = CBAM(512, self.residual_cbam)
 
         self.drop = nn.Dropout(p=drop)
         self.classifier = nn.Linear(4096, 7)

@@ -5,7 +5,7 @@ from models.cbam_modified import CBAM
 
 
 class VggCBAM(nn.Module):
-    def __init__(self, drop=0.3, crop=40):
+    def __init__(self, drop=0.3, crop=40, **kwargs):
         super().__init__()
         self.crop = crop
         self.conv_bn_prelu_1a = ConvBNPRELU(1, 64)

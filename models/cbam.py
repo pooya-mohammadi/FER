@@ -78,12 +78,16 @@ class SpatialGate(nn.Module):
 
 
 class CBAM(nn.Module):
-    def __init__(self, gate_channels, reduction_ratio=16, pool_types=('avg', 'max')):
+    def __init__(self, gate_channels, residual_cbam, reduction_ratio=16, pool_types=('avg', 'max')):
         super(CBAM, self).__init__()
         self.ChannelGate = ChannelGate(gate_channels, reduction_ratio, pool_types)
         self.SpatialGate = SpatialGate()
+        self.residual_cbam = residual_cbam
 
     def forward(self, x):
         x_out = self.ChannelGate(x)
         x_out = self.SpatialGate(x_out)
-        return x + x_out
+        if self.residual_cbam:
+            return x + x_out
+        else:
+            return x_out

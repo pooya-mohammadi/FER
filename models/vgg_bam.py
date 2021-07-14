@@ -5,7 +5,7 @@ from models.bam import BAM
 
 
 class VggBAM(nn.Module):
-    def __init__(self, drop=0.2, crop=40):
+    def __init__(self, drop=0.2, crop=40, **kwargs):
         super().__init__()
         self.crop = crop
         self.conv1a = nn.Conv2d(in_channels=1, out_channels=64, kernel_size=3, padding=1)
