@@ -1,6 +1,6 @@
 import torch
 from torch.optim.lr_scheduler import ReduceLROnPlateau
-from models import vgg, efn, vgg_attention, vgg_bam, vgg_cbam, vgg_cbam_modified
+from models import vgg, efn, vgg_attention, vgg_bam, vgg_cbam, vgg_cbam_modified, vgg_cbam_extended
 from utils.checkpoint import restore
 from utils.logger import Logger
 
@@ -10,7 +10,8 @@ nets = {
     'vgg_attention': vgg_attention.Vgg,
     'vgg_bam': vgg_bam.VggBAM,
     'vgg_cbam': vgg_cbam.VggCBAM,
-    'vgg_cbam_modified': vgg_cbam_modified.VggCBAM
+    'vgg_cbam_modified': vgg_cbam_modified.VggCBAM,
+    'vgg_cbam_extended': vgg_cbam_extended.VggCBAM
 }
 
 

@@ -66,11 +66,11 @@ def run(net, logger, hps, optimizer, scheduler, num_workers):
 
 
 if __name__ == "__main__":
-    hps = setup_hparams(name='vgg_cbam_3',
+    hps = setup_hparams(name='vgg_cbam_extended',
                         restore_epoch=0,
-                        network='vgg_cbam',
+                        network='vgg_cbam_extended',
                         crop_size=40,
-                        cbam_blocks=(1, 2, 3),
+                        cbam_blocks=(1, 2, 3, 4),
                         residual_cbam=True)
     logger, net, optimizer, scheduler = setup_network(hps, get_best=False, device=device)
     run(net, logger, hps, optimizer, scheduler, num_workers=0)
