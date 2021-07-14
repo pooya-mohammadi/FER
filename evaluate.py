@@ -108,12 +108,18 @@ if __name__ == "__main__":
              criterion,
              device,
              name='Train',
-             save_path=os.path.join('checkpoints', hps['name'])
+             save_path=hps['model_save_dir'])
 
-             )
+    evaluate(net,
+             valloader,
+             criterion,
+             device,
+             name='Val',
+             save_path=hps['model_save_dir'])
 
-    evaluate(net, valloader, criterion, device, name='Val',
-             save_path=os.path.join('checkpoints', hps['name']))
-
-    evaluate(net, testloader, criterion, device, name='Test',
-             save_path=os.path.join('checkpoints', hps['name']))
+    evaluate(net,
+             testloader,
+             criterion,
+             device,
+             name='Test',
+             save_path=hps['model_save_dir'])
