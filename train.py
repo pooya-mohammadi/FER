@@ -2,17 +2,19 @@ import warnings
 import torch
 import torch.nn as nn
 from torch.cuda.amp import GradScaler
+import numpy as np
 from data.fer2013 import get_dataloaders
 from utils.checkpoint import save
 from utils.hparams import setup_hparams
 from utils.loops import train, evaluate
 from utils.setup_network import setup_network
 
+
 warnings.filterwarnings("ignore")
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
-def run(net, logger, hps, optimizer, scheduler, num_workers):
+def run(net, logger, hps, optimizer, scheduler, num_workers, apply_class_weights):
     trainloader, valloader, testloader = get_dataloaders(path=hps['data_path'],
                                                          bs=hps['bs'],
                                                          num_workers=num_workers,
@@ -21,7 +23,21 @@ def run(net, logger, hps, optimizer, scheduler, num_workers):
 
     net = net.to(device)
     scaler = GradScaler()
-    criterion = nn.CrossEntropyLoss()
+
+    if apply_class_weights:
+        class_weights = [
+            1.02660468,
+            9.40661861,
+            1.00104606,
+            0.56843877,
+            0.84912748,
+            1.29337298,
+            0.82603942,
+        ]
+        class_weights = torch.FloatTensor(np.array(class_weights)).to(device)
+        criterion = nn.CrossEntropyLoss(class_weights)
+    else:
+        criterion = nn.CrossEntropyLoss()
 
     start_epoch = hps['restore_epoch'] if hps['restore_epoch'] is not None else hps['start_epoch']
     print("Training", hps['name'], "on", device, " start_epoch: ", start_epoch)
@@ -73,4 +89,4 @@ if __name__ == "__main__":
                         cbam_blocks=(1, 2, 3, 4),
                         residual_cbam=True)
     logger, net, optimizer, scheduler = setup_network(hps, get_best=False, device=device)
-    run(net, logger, hps, optimizer, scheduler, num_workers=0)
+    run(net, logger, hps, optimizer, scheduler, num_workers=0, apply_class_weights=True)
