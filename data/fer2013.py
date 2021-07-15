@@ -81,8 +81,8 @@ def get_dataloaders(path, bs, num_workers, crop_size, augment=True):
     else:
         fer2013, emotion_mapping = load_data(path)
         xtrain, ytrain = prepare_data(fer2013[fer2013['Usage'] == 'Training'])
-        xval, yval = prepare_data(fer2013[fer2013['Usage'] == 'PrivateTest'])
-        xtest, ytest = prepare_data(fer2013[fer2013['Usage'] == 'PublicTest'])
+        xval, yval = prepare_data(fer2013[fer2013['Usage'] == 'PublicTest'])
+        xtest, ytest = prepare_data(fer2013[fer2013['Usage'] == 'PrivateTest'])
 
     mu, st = 0, 255
 
