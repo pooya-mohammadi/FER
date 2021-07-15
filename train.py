@@ -9,7 +9,6 @@ from utils.hparams import setup_hparams
 from utils.loops import train, evaluate
 from utils.setup_network import setup_network
 
-
 warnings.filterwarnings("ignore")
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -18,7 +17,10 @@ def run(net, logger, hps, optimizer, scheduler, num_workers, apply_class_weights
     trainloader, valloader, testloader = get_dataloaders(path=hps['data_path'],
                                                          bs=hps['bs'],
                                                          num_workers=num_workers,
-                                                         crop_size=hps['crop_size']
+                                                         crop_size=hps['crop_size'],
+                                                         augment=hps['augment'],
+                                                         gussian_blur=hps['gussain_blur'],
+                                                         rotation_range=hps['rotation_range']
                                                          )
 
     net = net.to(device)
@@ -87,6 +89,9 @@ if __name__ == "__main__":
                         network='vgg_cbam_extended',
                         crop_size=40,
                         cbam_blocks=(1, 2, 3, 4),
-                        residual_cbam=True)
+                        residual_cbam=True,
+                        gussain_blur=False,
+                        rotation_range=10,
+                        augment=True)
     logger, net, optimizer, scheduler = setup_network(hps, get_best=False, device=device)
     run(net, logger, hps, optimizer, scheduler, num_workers=0, apply_class_weights=True)

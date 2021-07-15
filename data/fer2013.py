@@ -61,7 +61,7 @@ def prepare_data(data):
     return image_array, image_label
 
 
-def get_dataloaders(path, bs, num_workers, crop_size, augment=True):
+def get_dataloaders(path, bs, num_workers, crop_size, augment, gussian_blur, rotation_range):
     """ Prepare train, val, & test dataloaders
         Augment training data using:
             - cropping
@@ -99,8 +99,8 @@ def get_dataloaders(path, bs, num_workers, crop_size, augment=True):
             transforms.RandomResizedCrop(48, scale=(0.8, 1.2)),
             transforms.RandomApply([transforms.RandomAffine(0, translate=(0.2, 0.2))], p=0.5),
             transforms.RandomHorizontalFlip(),
-            transforms.RandomApply([transforms.RandomRotation(20)], p=0.5),
-            transforms.RandomApply([transforms.GaussianBlur(3)], p=0.5),
+            transforms.RandomApply([transforms.RandomRotation(rotation_range)], p=0.5),
+            transforms.RandomApply([transforms.GaussianBlur(3)], p=0.5 if gussian_blur else 0) ,
             transforms.Pad(2 if crop_size == 48 else 0),
             transforms.TenCrop(crop_size),
             transforms.Lambda(lambda crops: torch.stack([transforms.ToTensor()(crop) for crop in crops])),
