@@ -20,7 +20,8 @@ def run(net, logger, hps, optimizer, scheduler, num_workers, apply_class_weights
                                                          crop_size=hps['crop_size'],
                                                          augment=hps['augment'],
                                                          gussian_blur=hps['gussain_blur'],
-                                                         rotation_range=hps['rotation_range']
+                                                         rotation_range=hps['rotation_range'],
+                                                         combine_val_train=hps['combine_val_train']
                                                          )
 
     net = net.to(device)
@@ -92,6 +93,7 @@ if __name__ == "__main__":
                         residual_cbam=True,
                         gussain_blur=False,
                         rotation_range=10,
-                        augment=True)
+                        augment=True,
+                        combine_val_train=True)
     logger, net, optimizer, scheduler = setup_network(hps, get_best=False, device=device)
     run(net, logger, hps, optimizer, scheduler, num_workers=0, apply_class_weights=True)

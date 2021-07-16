@@ -85,8 +85,11 @@ def evaluate(net, dataloader, criterion, device, name, save_path):
 
 if __name__ == "__main__":
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    hps = setup_hparams('vgg_cbam', network='vgg_cbam', crop_size=40, data_path='../data',
-                        cbam_blocks=(1, 2, 3), residual_cbam=False)
+    hps = setup_hparams('vgg_cbam', network='vgg_cbam',
+                        crop_size=40, data_path='../data',
+                        cbam_blocks=(1, 2, 3), residual_cbam=False,
+                        gussian_blur=False, rotation_range=20,
+                        combine_val_train=False)
 
     # build network
     logger, net, optimizer, scheduler = setup_network(hps, get_best=True, device=device)
@@ -99,9 +102,12 @@ if __name__ == "__main__":
     # Get data with no augmentation
     trainloader, valloader, testloader = get_dataloaders(augment=False,
                                                          bs=hps['bs'],
-                                                         num_workers=6,
+                                                         num_workers=0,
                                                          crop_size=40,
-                                                         path=hps['data_path'])
+                                                         path=hps['data_path'],
+                                                         gussian_blur=hps['gussian_blur'],
+                                                         rotation_range=hps['rotation_range'],
+                                                         combine_val_train=hps['combine_val_train'])
 
     evaluate(net,
              trainloader,

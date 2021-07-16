@@ -61,7 +61,7 @@ def prepare_data(data):
     return image_array, image_label
 
 
-def get_dataloaders(path, bs, num_workers, crop_size, augment, gussian_blur, rotation_range):
+def get_dataloaders(path, bs, num_workers, crop_size, augment, gussian_blur, rotation_range, combine_val_train):
     """ Prepare train, val, & test dataloaders
         Augment training data using:
             - cropping
@@ -100,7 +100,7 @@ def get_dataloaders(path, bs, num_workers, crop_size, augment, gussian_blur, rot
             transforms.RandomApply([transforms.RandomAffine(0, translate=(0.2, 0.2))], p=0.5),
             transforms.RandomHorizontalFlip(),
             transforms.RandomApply([transforms.RandomRotation(rotation_range)], p=0.5),
-            transforms.RandomApply([transforms.GaussianBlur(3)], p=0.5 if gussian_blur else 0) ,
+            transforms.RandomApply([transforms.GaussianBlur(3)], p=0.5 if gussian_blur else 0),
             transforms.Pad(2 if crop_size == 48 else 0),
             transforms.TenCrop(crop_size),
             transforms.Lambda(lambda crops: torch.stack([transforms.ToTensor()(crop) for crop in crops])),
@@ -110,7 +110,15 @@ def get_dataloaders(path, bs, num_workers, crop_size, augment, gussian_blur, rot
         ])
     else:
         train_transform = test_transform
+    if combine_val_train:
+        xtrain = np.concatenate([xtrain, xval], axis=0)
+        ytrain = np.concatenate([ytrain, yval], axis=0)
+        train = CustomDataset(xtrain, ytrain, train_transform)
+        test = CustomDataset(xtest, ytest, test_transform)
 
+        trainloader = DataLoader(train, batch_size=bs, shuffle=True, num_workers=num_workers)
+        testloader = DataLoader(test, batch_size=bs, shuffle=True, num_workers=num_workers)
+        return trainloader, testloader, None
     train = CustomDataset(xtrain, ytrain, train_transform)
     val = CustomDataset(xval, yval, test_transform)
     test = CustomDataset(xtest, ytest, test_transform)
