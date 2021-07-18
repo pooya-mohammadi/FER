@@ -1,10 +1,7 @@
 import os
-import numpy as np
 import pandas as pd
-import torch
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
-
 import numpy as np
 import torch
 from PIL import Image
@@ -61,7 +58,7 @@ def prepare_data(data):
     return image_array, image_label
 
 
-def get_dataloaders(path, bs, num_workers, crop_size, augment, gussian_blur, rotation_range, combine_val_train):
+def get_dataloaders(path, bs, num_workers, crop_size, augment, gussian_blur, rotation_range, combine_val_train, cutmix):
     """ Prepare train, val, & test dataloaders
         Augment training data using:
             - cropping
@@ -106,7 +103,8 @@ def get_dataloaders(path, bs, num_workers, crop_size, augment, gussian_blur, rot
             transforms.Lambda(lambda crops: torch.stack([transforms.ToTensor()(crop) for crop in crops])),
             transforms.Lambda(
                 lambda tensors: torch.stack([transforms.Normalize(mean=(mu,), std=(st,))(t) for t in tensors])),
-            transforms.Lambda(lambda tensors: torch.stack([transforms.RandomErasing(p=0.5)(t) for t in tensors])),
+            transforms.Lambda(
+                lambda tensors: torch.stack([transforms.RandomErasing(p=0 if cutmix else 0.5)(t) for t in tensors])),
         ])
     else:
         train_transform = test_transform

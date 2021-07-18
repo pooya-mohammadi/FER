@@ -21,7 +21,8 @@ def run(net, logger, hps, optimizer, scheduler, num_workers, apply_class_weights
                                                          augment=hps['augment'],
                                                          gussian_blur=hps['gussain_blur'],
                                                          rotation_range=hps['rotation_range'],
-                                                         combine_val_train=hps['combine_val_train']
+                                                         combine_val_train=hps['combine_val_train'],
+                                                         cutmix=hps['cutmix']
                                                          )
 
     net = net.to(device)
@@ -47,7 +48,8 @@ def run(net, logger, hps, optimizer, scheduler, num_workers, apply_class_weights
 
     for epoch in range(start_epoch, hps['n_epochs']):
 
-        acc_tr, loss_tr = train(net, trainloader, criterion, optimizer, scaler)
+        acc_tr, loss_tr = train(net, trainloader, criterion, optimizer, scaler, cutmix_prop=hps['cutmix_prop'],
+                                beta=hps['beta'])
         logger.loss_train.append(loss_tr)
         logger.acc_train.append(acc_tr)
 
@@ -85,15 +87,18 @@ def run(net, logger, hps, optimizer, scheduler, num_workers, apply_class_weights
 
 
 if __name__ == "__main__":
-    hps = setup_hparams(name='vgg_cbam_extended',
+    hps = setup_hparams(name='vgg_cbam_cutmix',
                         restore_epoch=0,
                         network='vgg_cbam_extended',
                         crop_size=40,
-                        cbam_blocks=(1, 2, 3, 4),
+                        cbam_blocks=(0, 1, 2, 3, 4),
                         residual_cbam=True,
                         gussain_blur=False,
-                        rotation_range=10,
+                        rotation_range=20,
                         augment=True,
-                        combine_val_train=True)
+                        combine_val_train=True,
+                        cutmix=True,
+                        cutmix_prop=0.5,
+                        beta=1)
     logger, net, optimizer, scheduler = setup_network(hps, get_best=False, device=device)
     run(net, logger, hps, optimizer, scheduler, num_workers=0, apply_class_weights=True)
