@@ -35,7 +35,7 @@ class BottleNeck(nn.Module):
 
 
 class Resnet(nn.Module):
-    def __init__(self, block, num_classes=1000, layers=[3, 4, 6, 3], inchannels=1):
+    def __init__(self, block, num_classes=1000, layers=[3, 4, 6, 3], inchannels=3, **kwargs):
         super(Resnet, self).__init__()
         self.conv1 = nn.Conv2d(inchannels, filters[0], kernel_size=7, stride=2, padding=3, bias=False)
         self.BN = nn.BatchNorm2d(filters[0])

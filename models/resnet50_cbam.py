@@ -1,8 +1,11 @@
 import torch
 from models.cbam import CBAM
 import torch.nn as nn
-from resnet50 import Resnet
 from torchsummary import summary
+from .resnet50 import Resnet
+
+
+filters = [64, 128, 256, 512]
 
 
 class CbamBottleNeck(nn.Module):
@@ -14,7 +17,7 @@ class CbamBottleNeck(nn.Module):
         if 'residual_cbam' in kwargs:
             self.residual_cbam = kwargs["residual_cbam"]
         else:
-            self.residual_cbam=False
+            self.residual_cbam = False
         self.conv1 = nn.Conv2d(in_channel, out_channel, kernel_size=1, stride=1, bias=False)
         self.BN1 = nn.BatchNorm2d(out_channel)
         self.conv2 = nn.Conv2d(out_channel, out_channel, kernel_size=3, stride=stride, padding=1, bias=False)
@@ -47,6 +50,4 @@ if __name__ == '__main__':
     model = Resnet(CbamBottleNeck, 7, [3, 4, 6, 3]).to('cuda')
     model(torch.zeros((1, 1, 40, 40)).to('cuda'))
     summary(model, (1, 48, 48))
-
-
 

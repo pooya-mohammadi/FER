@@ -9,9 +9,10 @@ hps = {
     'start_epoch': 0,
     'lr': 0.01,  # starting learning rate
     'lr_decay': 0.75,
+    'weight_decay': 0.0001,
     'save_freq': 20,  # how often to create checkpoints
     'drop': 0.1,
-    'bs': 64,
+    'bs': 2,
     'data_path': '../data/fer2013.csv',
     'crop_size': 40,
 

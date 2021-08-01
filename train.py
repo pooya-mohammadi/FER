@@ -4,6 +4,7 @@ import torch.nn as nn
 from torch.cuda.amp import GradScaler
 import numpy as np
 from data.fer2013 import get_dataloaders
+from models.resnet50_cbam import CbamBottleNeck
 from utils.checkpoint import save
 from utils.hparams import setup_hparams
 from utils.loops import train, evaluate
@@ -22,7 +23,10 @@ def run(net, logger, hps, optimizer, scheduler, num_workers, apply_class_weights
                                                          gussian_blur=hps['gussain_blur'],
                                                          rotation_range=hps['rotation_range'],
                                                          combine_val_train=hps['combine_val_train'],
-                                                         cutmix=hps['cutmix']
+                                                         cutmix=hps['cutmix'],
+                                                         network=hps['network'] if hps[
+                                                                                       'network'] == 'resnet50_cbam' else False,
+                                                         imagesize=hps['imagesize'] if 'imagesize' in hps else False,
                                                          )
 
     net = net.to(device)
@@ -49,11 +53,11 @@ def run(net, logger, hps, optimizer, scheduler, num_workers, apply_class_weights
     for epoch in range(start_epoch, hps['n_epochs']):
 
         acc_tr, loss_tr = train(net, trainloader, criterion, optimizer, scaler, cutmix_prop=hps['cutmix_prop'],
-                                beta=hps['beta'])
+                                beta=hps['beta'], Ncrop=hps['Ncrop'] if 'Ncrop' in hps else True)
         logger.loss_train.append(loss_tr)
         logger.acc_train.append(acc_tr)
 
-        acc_v, loss_v = evaluate(net, valloader, criterion)
+        acc_v, loss_v = evaluate(net, valloader, criterion, Ncrop=hps['Ncrop'] if 'Ncrop' in hps else True)
         logger.loss_val.append(loss_v)
         logger.acc_val.append(acc_v)
 
@@ -87,18 +91,26 @@ def run(net, logger, hps, optimizer, scheduler, num_workers, apply_class_weights
 
 
 if __name__ == "__main__":
-    hps = setup_hparams(name='vgg_cbam_cutmix',
+    hps = setup_hparams(name='resnet50_cbam',
+                        network='resnet50_cbam',
+                        block=CbamBottleNeck,
+                        inchannels=3,
+                        num_classes=7,
+                        lr=0.0001,
+                        n_epochs=50,
+                        weight_decay=0.001,
                         restore_epoch=0,
-                        network='vgg_cbam_extended',
-                        crop_size=40,
-                        cbam_blocks=(0, 1, 2, 3, 4),
-                        residual_cbam=True,
+                        imagesize=224,
+                        beta=-1,
+                        augment=False,
                         gussain_blur=False,
                         rotation_range=20,
-                        augment=True,
-                        combine_val_train=True,
-                        cutmix=True,
+                        combine_val_train=False,
+                        cutmix=False,
                         cutmix_prop=0.5,
-                        beta=1)
+                        optim='radam',
+                        Ncrop=False
+
+                        )
     logger, net, optimizer, scheduler = setup_network(hps, get_best=False, device=device)
-    run(net, logger, hps, optimizer, scheduler, num_workers=0, apply_class_weights=True)
+    run(net, logger, hps, optimizer, scheduler, num_workers=8, apply_class_weights=True)

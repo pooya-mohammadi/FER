@@ -35,50 +35,53 @@ def train(net, dataloader, criterion, optimizer, scaler, cutmix_prop, beta=None,
         inputs, labels = data
         inputs, labels = inputs.to(device), labels.to(device)
 
-        with autocast():
-            if Ncrop:
-                # fuse crops and batchsize
-                bs, ncrops, c, h, w = inputs.shape
-                inputs = inputs.view(-1, c, h, w)
+        # with autocast():
+        if Ncrop:
+            # fuse crops and batchsize
+            bs, ncrops, c, h, w = inputs.shape
+            inputs = inputs.view(-1, c, h, w)
+        else:
+            bs, c, h, w = inputs.shape
+            inputs = inputs.view(-1, c, h, w)
+            ncrops = 1
+        # repeat labels ncrops times
+        labels = torch.repeat_interleave(labels, repeats=ncrops, dim=0)
 
-            # repeat labels ncrops times
-            labels = torch.repeat_interleave(labels, repeats=ncrops, dim=0)
+        r = np.random.rand(1)
+        if beta > 0 and r < cutmix_prop:
+            # generate mixed sample
+            lam = np.random.beta(beta, beta)
+            rand_index = torch.randperm(inputs.size()[0]).cuda()
+            target_a = labels
+            target_b = labels[rand_index]
+            bbx1, bby1, bbx2, bby2 = rand_bbox(inputs.size(), lam)
+            inputs[:, :, bbx1:bbx2, bby1:bby2] = inputs[rand_index, :, bbx1:bbx2, bby1:bby2]
+            # adjust lambda to exactly match pixel ratio
+            lam = 1 - ((bbx2 - bbx1) * (bby2 - bby1) / (inputs.size()[-1] * inputs.size()[-2]))
+            # compute output
+            outputs = net(inputs)
+            loss = criterion(outputs, target_a) * lam + criterion(outputs, target_b) * (1. - lam)
+        else:
+            # compute output
+            outputs = net(inputs)
+            loss = criterion(outputs, labels)
 
-            r = np.random.rand(1)
-            if beta > 0 and r < cutmix_prop:
-                # generate mixed sample
-                lam = np.random.beta(beta, beta)
-                rand_index = torch.randperm(inputs.size()[0]).cuda()
-                target_a = labels
-                target_b = labels[rand_index]
-                bbx1, bby1, bbx2, bby2 = rand_bbox(inputs.size(), lam)
-                inputs[:, :, bbx1:bbx2, bby1:bby2] = inputs[rand_index, :, bbx1:bbx2, bby1:bby2]
-                # adjust lambda to exactly match pixel ratio
-                lam = 1 - ((bbx2 - bbx1) * (bby2 - bby1) / (inputs.size()[-1] * inputs.size()[-2]))
-                # compute output
-                outputs = net(inputs)
-                loss = criterion(outputs, target_a) * lam + criterion(outputs, target_b) * (1. - lam)
-            else:
-                # compute output
-                outputs = net(inputs)
-                loss = criterion(outputs, labels)
+        # forward + backward + optimize
+        # outputs = net(inputs)
+        # loss = criterion(outputs, labels)
+        scaler.scale(loss).backward()
 
-            # forward + backward + optimize
-            # outputs = net(inputs)
-            # loss = criterion(outputs, labels)
-            scaler.scale(loss).backward()
+        scaler.step(optimizer)
+        scaler.update()
+        optimizer.zero_grad()
+        # scheduler.step(epoch + i / iters)
 
-            scaler.step(optimizer)
-            scaler.update()
-            optimizer.zero_grad()
-            # scheduler.step(epoch + i / iters)
+        # calculate performance metrics
+        loss_tr += loss.item()
 
-            # calculate performance metrics
-            loss_tr += loss.item()
-
-            _, preds = torch.max(outputs.data, 1)
-            correct_count += (preds == labels).sum().item()
-            n_samples += labels.size(0)
+        _, preds = torch.max(outputs.data, 1)
+        correct_count += (preds == labels).sum().item()
+        n_samples += labels.size(0)
 
     acc = 100 * correct_count / n_samples
     loss = loss_tr / n_samples
