@@ -23,7 +23,7 @@ def correct_count(output, target, topk=(1,)):
     return res
 
 
-def evaluate(net, dataloader, criterion, device, name, save_path):
+def evaluate(net,dataloader, criterion, device, name, save_path,Ncrop):
     net = net.eval()
     loss_tr, n_samples = 0.0, 0.0
 
@@ -38,8 +38,12 @@ def evaluate(net, dataloader, criterion, device, name, save_path):
             inputs, labels = inputs.to(device), labels.to(device)
 
             # fuse crops and batchsize
-            bs, ncrops, c, h, w = inputs.shape
-            inputs = inputs.view(-1, c, h, w)
+            if Ncrop:
+              bs, ncrops, c, h, w = inputs.shape
+              inputs = inputs.view(-1, c, h, w)
+            else:
+              bs, c, h, w = inputs.shape
+              ncrops=1
 
             # forward
             outputs = net(inputs)

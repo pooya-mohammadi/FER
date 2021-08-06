@@ -62,7 +62,7 @@ def run(net, logger, hps, optimizer, scheduler, num_workers, apply_class_weights
         logger.acc_val.append(acc_v)
 
         # Update learning rate
-        scheduler.step(acc_v)
+        scheduler.step(100 - acc_v)
 
         if acc_v > logger.best_acc:
             logger.best_acc = acc_v

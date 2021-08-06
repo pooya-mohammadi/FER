@@ -20,11 +20,26 @@ nets = {
 
 
 def setup_network(hps, get_best, device):
-    net = nets[hps['network']](crop=hps['crop_size'], **hps)
     if hps['name'] == 'resnet50_cbam':
         net = nets[hps['network']](**hps)
+        if 'pretrained' in hps.keys() and hps['pretrained'] == True:
+            from torch.hub import load_state_dict_from_url
+            url = "https://github.com/osmr/imgclsmob/releases/download/v0.0.537/cbam_resnet50-0505-d8cf8488.pth.zip"
+            state_dict = load_state_dict_from_url(url, progress=True)
+            new = list(state_dict.items())
+            my_model = net.state_dict()
+            count = 0
+            for key, value in my_model.items():
+                if count < len(my_model) - 2:
+                    layer_name, weights = new[count]
+                    my_model[key] = weights
+                count += 1
+
+            net.load_state_dict(my_model)
+
     else:
-        net = net.to(device)
+        net = nets[hps['network']](crop=hps['crop_size'], **hps)
+    net = net.to(device)
     if 'optim' in hps and hps['optim'] == 'radam':
         optimizer = RAdam(net.parameters(), lr=hps['lr'], weight_decay=hps['weight_decay'])
         scheduler = ReduceLROnPlateau(optimizer, min_lr=1e-6, patience=2, verbose=True)

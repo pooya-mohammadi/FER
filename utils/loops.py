@@ -31,7 +31,7 @@ def train(net, dataloader, criterion, optimizer, scaler, cutmix_prop, beta=None,
     net = net.train()
     loss_tr, correct_count, n_samples = 0.0, 0.0, 0.0
 
-    for i, data in tqdm(enumerate(dataloader), total=len(dataloader), leave=False, desc="Train:"):
+    for i, data in tqdm(enumerate(dataloader), total=len(dataloader), leave=False, desc="Train:", position=0):
         inputs, labels = data
         inputs, labels = inputs.to(device), labels.to(device)
 
@@ -40,12 +40,8 @@ def train(net, dataloader, criterion, optimizer, scaler, cutmix_prop, beta=None,
             # fuse crops and batchsize
             bs, ncrops, c, h, w = inputs.shape
             inputs = inputs.view(-1, c, h, w)
-        else:
-            bs, c, h, w = inputs.shape
-            inputs = inputs.view(-1, c, h, w)
-            ncrops = 1
-        # repeat labels ncrops times
-        labels = torch.repeat_interleave(labels, repeats=ncrops, dim=0)
+            labels = torch.repeat_interleave(labels, repeats=ncrops, dim=0)
+      
 
         r = np.random.rand(1)
         if beta > 0 and r < cutmix_prop:
@@ -92,7 +88,7 @@ def evaluate(net, dataloader, criterion, Ncrop=True):
     net = net.eval()
     with torch.no_grad():
         loss_tr, correct_count, n_samples = 0.0, 0.0, 0.0
-        for data in tqdm(dataloader, total=len(dataloader), leave=False, desc="Evaluate:"):
+        for data in tqdm(dataloader, total=len(dataloader), leave=False, desc="Evaluate:", position=0):
             inputs, labels = data
             inputs, labels = inputs.to(device), labels.to(device)
             if Ncrop:

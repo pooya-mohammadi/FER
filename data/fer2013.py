@@ -7,7 +7,7 @@ import torch
 from PIL import Image
 from torch.utils.data import Dataset
 import cv2
-import imgaug.augmenters as iaa
+from imgaug import augmenters as iaa
 
 
 class CustomDataset(Dataset):
@@ -38,7 +38,7 @@ class CustomDataset(Dataset):
 
 
 class RESCostumDataset(Dataset):
-    def __init__(self, category, data, image_size=224, number_of_test=48, transform=True):
+    def __init__(self, category, data, image_size=224, number_of_test=48):
         self.category = category
         self.data = data
         self.pixels = self.data['pixels'].tolist()
@@ -47,15 +47,16 @@ class RESCostumDataset(Dataset):
         self.test_number = number_of_test
 
         self.image_size = (image_size, image_size)
-        self.applytransform = transform
+        self.applytransform = True
+        self.aug = iaa.Sequential(
+            [iaa.Fliplr(p=0.5),
+             iaa.Affine(rotate=(-30, 30))]
+        )
         self.transform = transforms.Compose(
-            [iaa.Sequential(
-                [iaa.Fliplr(p=0.5),
-                 iaa.Affine(rotate=(-30, 30))]
-            ).augment_image,
-             transforms.ToPILImage(),
-             transforms.ToTensor()
-             ]
+            [
+                transforms.ToPILImage(),
+                transforms.ToTensor()
+            ]
         )
 
     def __len__(self):
@@ -67,13 +68,11 @@ class RESCostumDataset(Dataset):
         image = np.reshape(pixels, (48, 48)).astype(np.uint8)
         image = cv2.resize(image, self.image_size)
         image = np.dstack([image] * 3)
-        if self.category == 'test':
-            images = [self.transform(image) for i in range(self.test_number)]
-            target = self.emotions.iloc[idx].idxmax()
-            return images, target
-        if self.applytransform:
-            image = self.transform(image)
-        target = self.emotions.iloc[idx].idxmax()
+        if self.category == 'train' or self.category == 'test':
+            image = self.aug(image=image)
+
+        image = self.transform(image)
+        target = torch.tensor(self.emotions.iloc[idx].idxmax())
         return image, target
 
 
@@ -190,5 +189,3 @@ def get_dataloaders(path, bs, num_workers, crop_size, augment, gussian_blur, rot
         testloader = DataLoader(test, batch_size=bs, shuffle=True, num_workers=num_workers)
 
     return trainloader, valloader, testloader
-
-
