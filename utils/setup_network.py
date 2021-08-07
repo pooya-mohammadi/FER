@@ -5,6 +5,7 @@ from models import vgg, efn, vgg_attention, vgg_bam, vgg_cbam, vgg_cbam_modified
 from utils.checkpoint import restore
 from utils.logger import Logger
 from utils.radam import RAdam
+import torch.nn as nn
 
 nets = {
     'vgg': vgg.Vgg,
@@ -30,12 +31,15 @@ def setup_network(hps, get_best, device):
             my_model = net.state_dict()
             count = 0
             for key, value in my_model.items():
-                if count < len(my_model) - 2:
-                    layer_name, weights = new[count]
-                    my_model[key] = weights
+                # if count < len(my_model) - 2:
+                #     layer_name, weights = new[count]
+                #     my_model[key] = weights
+                layer_name, weights = new[count]
+                my_model[key] = weights
                 count += 1
 
             net.load_state_dict(my_model)
+        net.fc = nn.Linear(2048, hps["classes"])
 
     else:
         net = nets[hps['network']](crop=hps['crop_size'], **hps)
@@ -53,3 +57,4 @@ def setup_network(hps, get_best, device):
         restore(net, logger, hps, optimizer, scheduler, get_best)
 
     return logger, net, optimizer, scheduler
+

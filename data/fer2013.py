@@ -38,7 +38,7 @@ class CustomDataset(Dataset):
 
 
 class RESCostumDataset(Dataset):
-    def __init__(self, category, data, image_size=224, number_of_test=48):
+    def __init__(self, category, data, image_size=224, number_of_test=10):
         self.category = category
         self.data = data
         self.pixels = self.data['pixels'].tolist()
@@ -68,8 +68,14 @@ class RESCostumDataset(Dataset):
         image = np.reshape(pixels, (48, 48)).astype(np.uint8)
         image = cv2.resize(image, self.image_size)
         image = np.dstack([image] * 3)
-        if self.category == 'train' or self.category == 'test':
+        if self.category == 'train' or self.category=="test":
             image = self.aug(image=image)
+        # if self.category=='test':
+        #   images = [self.aug(image=image) for i in range(self.test_number)]
+        #   # images = [image for i in range(self._tta_size)]
+        #   images = list(map(self.transform, images))
+        #   target = self.emotions.iloc[idx].idxmax()
+        #   return images, target
 
         image = self.transform(image)
         target = torch.tensor(self.emotions.iloc[idx].idxmax())
