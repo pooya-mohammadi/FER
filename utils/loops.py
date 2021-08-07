@@ -41,7 +41,11 @@ def train(net, dataloader, criterion, optimizer, scaler, cutmix_prop, beta=None,
             bs, ncrops, c, h, w = inputs.shape
             inputs = inputs.view(-1, c, h, w)
             labels = torch.repeat_interleave(labels, repeats=ncrops, dim=0)
-      
+        # else:
+        #     bs, c, h, w = inputs.shape
+        #     inputs = inputs.view(-1, c, h, w)
+        #     ncrops = 1
+        # repeat labels ncrops times
 
         r = np.random.rand(1)
         if beta > 0 and r < cutmix_prop:
@@ -90,7 +94,7 @@ def evaluate(net, dataloader, criterion, Ncrop=True):
         loss_tr, correct_count, n_samples = 0.0, 0.0, 0.0
         for data in tqdm(dataloader, total=len(dataloader), leave=False, desc="Evaluate:", position=0):
             inputs, labels = data
-            inputs, labels = inputs.to(device), labels.to(device)
+            inputs, labels = inputs.to(device, non_blocking=True), labels.to(device, non_blocking=True)
             if Ncrop:
                 # fuse crops and batchsize
                 bs, ncrops, c, h, w = inputs.shape

@@ -53,11 +53,11 @@ def run(net, logger, hps, optimizer, scheduler, num_workers, apply_class_weights
     for epoch in range(start_epoch, hps['n_epochs']):
 
         acc_tr, loss_tr = train(net, trainloader, criterion, optimizer, scaler, cutmix_prop=hps['cutmix_prop'],
-                                beta=hps['beta'], Ncrop=hps['Ncrop'] if 'Ncrop' in hps else True)
+                                beta=hps['beta'], Ncrop=hps['Ncrop_train'] if 'Ncrop_train' in hps else True)
         logger.loss_train.append(loss_tr)
         logger.acc_train.append(acc_tr)
 
-        acc_v, loss_v = evaluate(net, valloader, criterion, Ncrop=hps['Ncrop'] if 'Ncrop' in hps else True)
+        acc_v, loss_v = evaluate(net, valloader, criterion, Ncrop=hps['Ncrop_val'] if 'Ncrop_val' in hps else True)
         logger.loss_val.append(loss_v)
         logger.acc_val.append(acc_v)
 
@@ -93,24 +93,26 @@ def run(net, logger, hps, optimizer, scheduler, num_workers, apply_class_weights
 if __name__ == "__main__":
     hps = setup_hparams(name='resnet50_cbam',
                         network='resnet50_cbam',
+                        pretrained=True,
                         block=CbamBottleNeck,
                         inchannels=3,
-                        num_classes=7,
+                        classes=7,
                         lr=0.0001,
                         n_epochs=50,
                         weight_decay=0.001,
                         restore_epoch=0,
                         imagesize=224,
                         beta=-1,
-                        augment=False,
+                        augment=True,
+                        crop_size=224,
                         gussain_blur=False,
                         rotation_range=20,
                         combine_val_train=False,
                         cutmix=False,
                         cutmix_prop=0.5,
                         optim='radam',
-                        Ncrop=False
-
+                        Ncrop_train=True,
+                        Ncrop_val=False
                         )
     logger, net, optimizer, scheduler = setup_network(hps, get_best=False, device=device)
     run(net, logger, hps, optimizer, scheduler, num_workers=8, apply_class_weights=True)

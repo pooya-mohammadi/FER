@@ -38,12 +38,14 @@ class CustomDataset(Dataset):
 
 
 class RESCostumDataset(Dataset):
-    def __init__(self, category, data, image_size=224, number_of_test=10):
+    mu, st = 0, 255
+
+    def __init__(self, category, data, image_size=224, number_of_test=10, augment=True, **kwargs):
         self.category = category
         self.data = data
         self.pixels = self.data['pixels'].tolist()
         self.emotions = pd.get_dummies(self.data['emotion'])
-
+        self.augment = augment
         self.test_number = number_of_test
 
         self.image_size = (image_size, image_size)
@@ -52,12 +54,31 @@ class RESCostumDataset(Dataset):
             [iaa.Fliplr(p=0.5),
              iaa.Affine(rotate=(-30, 30))]
         )
-        self.transform = transforms.Compose(
+        self.testtransform = transforms.Compose(
             [
                 transforms.ToPILImage(),
                 transforms.ToTensor()
             ]
         )
+
+        if augment:
+            self.traintransform = transforms.Compose(
+                [transforms.ToPILImage(),
+                 transforms.RandomApply([transforms.RandomAffine(0, translate=(0.2, 0.2))], p=0.5),
+                 # transforms.RandomHorizontalFlip(),
+                 transforms.RandomApply([transforms.GaussianBlur(3)], p=0.5 if kwargs["gussian_blur"] else 0),
+                 transforms.TenCrop(kwargs["crop_size"]),
+                 transforms.Lambda(lambda crops: torch.stack([transforms.ToTensor()(crop) for crop in crops])),
+                 transforms.Lambda(
+                     lambda tensors: torch.stack(
+                         [transforms.Normalize(mean=(self.mu,), std=(self.st,))(t) for t in tensors])),
+                 transforms.Lambda(
+                     lambda tensors: torch.stack(
+                         [transforms.RandomErasing(p=0 if kwargs["cutmix"] else 0.5)(t) for t in tensors])),
+                 ]
+            )
+        else:
+            self.traintransform = self.testtransform
 
     def __len__(self):
         return len(self.pixels)
@@ -68,8 +89,13 @@ class RESCostumDataset(Dataset):
         image = np.reshape(pixels, (48, 48)).astype(np.uint8)
         image = cv2.resize(image, self.image_size)
         image = np.dstack([image] * 3)
-        if self.category == 'train' or self.category=="test":
+        if self.category == 'train':
             image = self.aug(image=image)
+            image = self.traintransform(image)
+        if self.category == "test":
+            image = self.aug(image=image)
+            image = self.testtransform(image)
+
         # if self.category=='test':
         #   images = [self.aug(image=image) for i in range(self.test_number)]
         #   # images = [image for i in range(self._tta_size)]
@@ -77,7 +103,6 @@ class RESCostumDataset(Dataset):
         #   target = self.emotions.iloc[idx].idxmax()
         #   return images, target
 
-        image = self.transform(image)
         target = torch.tensor(self.emotions.iloc[idx].idxmax())
         return image, target
 
@@ -112,15 +137,24 @@ def get_dataloaders(path, bs, num_workers, crop_size, augment, gussian_blur, rot
             fer2013_train, emotion_mapping_train = load_data(os.path.join(path, 'train.csv'))
             fer2013_val, emotion_mapping_val = load_data(os.path.join(path, 'val.csv'))
             fer2013_test, emotion_mapping_test = load_data(os.path.join(path, 'test.csv'))
-            train = RESCostumDataset('train', data=fer2013_train)
-            val = RESCostumDataset('val', data=fer2013_val)
-            test = RESCostumDataset('test', data=fer2013_test)
+            train = RESCostumDataset('train', data=fer2013_train, augment=augment, crop_size=crop_size,
+                                     gussian_blur=gussian_blur, cutmix=cutmix)
+            val = RESCostumDataset('val', data=fer2013_val, augment=augment, crop_size=crop_size,
+                                   gussian_blur=gussian_blur, cutmix=cutmix)
+            test = RESCostumDataset('test', data=fer2013_test, augment=augment, crop_size=crop_size,
+                                    gussian_blur=gussian_blur, cutmix=cutmix)
 
         else:
             fer2013, emotion_mapping = load_data(path)
-            train = RESCostumDataset('train', data=fer2013[fer2013['Usage'] == 'Training'])
-            val = RESCostumDataset('val', data=fer2013[fer2013['Usage'] == 'PublicTest'])
-            test = RESCostumDataset('test', data=fer2013[fer2013['Usage'] == 'PrivateTest'])
+            train = RESCostumDataset('train', data=fer2013[fer2013['Usage'] == 'Training'], augment=augment,
+                                     crop_size=crop_size,
+                                     gussian_blur=gussian_blur, cutmix=cutmix)
+            val = RESCostumDataset('val', data=fer2013[fer2013['Usage'] == 'PublicTest'], augment=augment,
+                                   crop_size=crop_size,
+                                   gussian_blur=gussian_blur, cutmix=cutmix)
+            test = RESCostumDataset('test', data=fer2013[fer2013['Usage'] == 'PrivateTest'], augment=augment,
+                                    crop_size=crop_size,
+                                    gussian_blur=gussian_blur, cutmix=cutmix)
 
         trainloader = DataLoader(train, batch_size=bs, shuffle=True, num_workers=num_workers, pin_memory=True)
         valloader = DataLoader(val, batch_size=bs, shuffle=False, num_workers=num_workers, pin_memory=True)

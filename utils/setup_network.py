@@ -57,4 +57,3 @@ def setup_network(hps, get_best, device):
         restore(net, logger, hps, optimizer, scheduler, get_best)
 
     return logger, net, optimizer, scheduler
-
