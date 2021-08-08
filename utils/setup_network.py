@@ -21,7 +21,7 @@ nets = {
 
 
 def setup_network(hps, get_best, device):
-    if hps['name'] == 'resnet50_cbam':
+    if hps['network'] == 'resnet50_cbam':
         net = nets[hps['network']](**hps)
         if 'pretrained' in hps.keys() and hps['pretrained'] == True:
             from torch.hub import load_state_dict_from_url
