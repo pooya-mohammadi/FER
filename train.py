@@ -27,6 +27,7 @@ def run(net, logger, hps, optimizer, scheduler, num_workers, apply_class_weights
                                                          network=hps['network'] if hps[
                                                                                        'network'] == 'resnet50_cbam' else False,
                                                          imagesize=hps['imagesize'] if 'imagesize' in hps else False,
+                                                         NoF=hps['NoF'] if 'NoF' in hps else False
                                                          )
 
     net = net.to(device)
