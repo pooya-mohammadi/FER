@@ -54,12 +54,22 @@ class RESCostumDataset(Dataset):
             [iaa.Fliplr(p=0.5),
              iaa.Affine(rotate=(-30, 30))]
         )
-        self.testtransform = transforms.Compose(
+        self.basetransform = transforms.Compose(
             [
                 transforms.ToPILImage(),
                 transforms.ToTensor()
             ]
         )
+        if NoF:
+            self.testtransform = transforms.Compose(
+                [transforms.Pad(2),
+                 transforms.TenCrop(kwargs['crop_size']),
+                 transforms.ToPILImage(),
+                 transforms.ToTensor()
+                 ]
+            )
+        else:
+            self.testtransform = self.basetransform
 
         if augment:
             self.traintransform = transforms.Compose(
@@ -70,16 +80,16 @@ class RESCostumDataset(Dataset):
                  transforms.Pad(2),
                  transforms.TenCrop(kwargs["crop_size"]),
                  transforms.Lambda(lambda crops: torch.stack([transforms.ToTensor()(crop) for crop in crops])),
-                  transforms.Lambda(
-                      lambda tensors: torch.stack(
-                          [transforms.Normalize(mean=(self.mu,), std=(self.st,))(t) for t in tensors])),
-                  transforms.Lambda(
-                      lambda tensors: torch.stack(
-                          [transforms.RandomErasing(p=0 if kwargs["cutmix"] else 0.5)(t) for t in tensors])),
+                 transforms.Lambda(
+                     lambda tensors: torch.stack(
+                         [transforms.Normalize(mean=(self.mu,), std=(self.st,))(t) for t in tensors])),
+                 transforms.Lambda(
+                     lambda tensors: torch.stack(
+                         [transforms.RandomErasing(p=0 if kwargs["cutmix"] else 0.5)(t) for t in tensors])),
                  ]
             )
         else:
-            self.traintransform = self.testtransform
+            self.traintransform = self.basetransform
 
     def __len__(self):
         return len(self.pixels)
@@ -93,19 +103,21 @@ class RESCostumDataset(Dataset):
         if self.category == 'train':
             image = self.aug(image=image)
             image = self.traintransform(image)
-            target = torch.tensor(self.emotions.iloc[idx].idxmax())
-            return image, target
+            # target = torch.tensor(self.emotions.iloc[idx].idxmax())
+            # return image, target
         if self.category == "test":
-            if self.NoF:
-                images = [self.aug(image=image) for i in range(self.test_number)]
-                images = [image for i in range(self.test_number)]
-                images = list(map(self.testtransform, images))
-                target = self.emotions.iloc[idx].idxmax()
-                return images, target
-            else:
-                image = self.aug(image=image)
+            image = self.testtransform(image)
+        # if self.NoF:
+        #     images = [self.aug(image=image) for i in range(self.test_number)]
+        #     images = [image for i in range(self.test_number)]
+        #     images = list(map(self.testtransform, images))
+        #     target = self.emotions.iloc[idx].idxmax()
+        #     return images, target
+        # else:
+        #     image = self.aug(image=image)
 
-        image = self.testtransform(image)
+        if self.category == "val":
+            image = self.basetransform
 
         target = torch.tensor(self.emotions.iloc[idx].idxmax())
         return image, target
