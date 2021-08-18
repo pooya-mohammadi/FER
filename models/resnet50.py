@@ -8,7 +8,7 @@ filters = [64, 128, 256, 512]
 class BottleNeck(nn.Module):
     expantion = 4
 
-    def __init__(self, in_channel, out_channel, transition=None, stride=1):
+    def __init__(self, in_channel, out_channel, transition=None, dropblock=None, stride=1):
         super(BottleNeck, self).__init__()
         self.conv1 = nn.Conv2d(in_channel, out_channel, kernel_size=1, stride=1, bias=False)
         self.BN1 = nn.BatchNorm2d(out_channel)
@@ -36,7 +36,7 @@ class BottleNeck(nn.Module):
 
 
 class Resnet(nn.Module):
-    def __init__(self, block, num_classes=1000, layers=[3, 4, 6, 3], inchannels=3, DropBlock=False, **kwargs):
+    def __init__(self, block, num_classes=1000, layers=[3, 4, 6, 3], inchannels=3, **kwargs):
         super(Resnet, self).__init__()
         self.conv1 = nn.Conv2d(inchannels, filters[0], kernel_size=7, stride=2, padding=3, bias=False)
         self.BN = nn.BatchNorm2d(filters[0])
@@ -48,8 +48,6 @@ class Resnet(nn.Module):
         self.stack4 = self.layer(block, filters[2], filters[3], layers[3], stride=2)
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.fc = nn.Linear(filters[3] * block.expantion, num_classes)
-        self.DB = DropBlock
-        self.dropblock = DropBlock2D(drop_prob=0.9, block_size=7)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -68,9 +66,13 @@ class Resnet(nn.Module):
                 nn.Conv2d(in_channels, out_channels * block.expantion, kernel_size=1, stride=stride, bias=False),
                 nn.BatchNorm2d(out_channels * block.expantion)
             )
+        if out_channels == filters[2] or out_channels == filters[3]:
+            dropblock = DropBlock2D(drop_prob=0.9, block_size=7)
+        else:
+            dropblock = None
 
         layers = []
-        layers.append(block(in_channels, out_channels, stride=stride, transition=transition))
+        layers.append(block(in_channels, out_channels, stride=stride, transition=transition, dropblock=dropblock))
         for _ in range(1, layer_numbers):
             layers.append(block(out_channels * block.expantion, out_channels))
 
@@ -85,11 +87,8 @@ class Resnet(nn.Module):
         x = self.stack1(x)
         x = self.stack2(x)
         x = self.stack3(x)
-        if self.DB:
-            x = self.dropblock(x)
         x = self.stack4(x)
-        if self.DB:
-            x = self.dropblock(x)
+
         x = self.avgpool(x)
         x = torch.flatten(x, 1)
 
@@ -101,6 +100,6 @@ class Resnet(nn.Module):
 if __name__ == '__main__':
     from torchsummary import summary
 
-    model = Resnet(BottleNeck, 7, inchannels=1,DropBlock=True).to('cuda')
+    model = Resnet(BottleNeck, 7, inchannels=1).to('cuda')
     model(torch.zeros((1, 1, 40, 40)).to('cuda'))
     summary(model, (1, 48, 48))
