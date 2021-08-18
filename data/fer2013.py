@@ -74,18 +74,18 @@ class RESCostumDataset(Dataset):
         if augment:
             self.traintransform = transforms.Compose(
                 [transforms.ToPILImage(),
-                 transforms.RandomApply([transforms.RandomAffine(0, translate=(0.2, 0.2))], p=0.5),
-                 transforms.RandomHorizontalFlip(),
-                 transforms.RandomApply([transforms.GaussianBlur(3)], p=0.5 if kwargs["gussian_blur"] else 0),
+                 # transforms.RandomApply([transforms.RandomAffine(0, translate=(0.2, 0.2))], p=0.5),
+                 # transforms.RandomHorizontalFlip(),
+                 # transforms.RandomApply([transforms.GaussianBlur(3)], p=0.5 if kwargs["gussian_blur"] else 0),
                  transforms.Pad(2),
                  transforms.TenCrop(kwargs["crop_size"]),
                  transforms.Lambda(lambda crops: torch.stack([transforms.ToTensor()(crop) for crop in crops])),
-                 transforms.Lambda(
-                     lambda tensors: torch.stack(
-                         [transforms.Normalize(mean=(self.mu,), std=(self.st,))(t) for t in tensors])),
-                 transforms.Lambda(
-                     lambda tensors: torch.stack(
-                         [transforms.RandomErasing(p=0 if kwargs["cutmix"] else 0.5)(t) for t in tensors])),
+                 # transforms.Lambda(
+                 #     lambda tensors: torch.stack(
+                 #         [transforms.Normalize(mean=(self.mu,), std=(self.st,))(t) for t in tensors])),
+                 # transforms.Lambda(
+                 #     lambda tensors: torch.stack(
+                 #         [transforms.RandomErasing(p=0 if kwargs["cutmix"] else 0.5)(t) for t in tensors])),
                  ]
             )
         else:
@@ -245,4 +245,3 @@ def get_dataloaders(path, bs, num_workers, crop_size, augment, gussian_blur, rot
         testloader = DataLoader(test, batch_size=bs, shuffle=True, num_workers=num_workers)
 
     return trainloader, valloader, testloader
-

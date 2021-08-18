@@ -2,8 +2,8 @@ import torch
 from models.cbam import CBAM
 import torch.nn as nn
 from torchsummary import summary
-from .resnet50 import Resnet
-
+ from .resnet50 import Resnet
+#from resnet50 import Resnet
 
 filters = [64, 128, 256, 512]
 
@@ -48,6 +48,6 @@ class CbamBottleNeck(nn.Module):
 if __name__ == '__main__':
     from torchsummary import summary
 
-    model = Resnet(CbamBottleNeck, 7, [3, 4, 6, 3]).to('cuda')
+    model = Resnet(CbamBottleNeck, 7, [3, 4, 6, 3],inchannels=1).to('cuda')
     model(torch.zeros((1, 1, 40, 40)).to('cuda'))
     summary(model, (1, 48, 48))
