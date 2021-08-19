@@ -26,10 +26,11 @@ def run(net, logger, hps, optimizer, scheduler, num_workers, apply_class_weights
                                                          cutmix=hps['cutmix'],
                                                          network=hps['network'] if hps[
                                                                                        'network'] == 'resnet50_cbam' else False,
-                                                         imagesize=hps['imagesize'] if 'imagesize' in hps else False,
+                                                         imagesize=hps[
+                                                             'imagesize'] if 'imagesize' in hps else False,
                                                          NoF=hps['NoF'] if 'NoF' in hps else False
                                                          )
-
+    net.n_steps = len(trainloader) * hps['n_epochs']
     net = net.to(device)
     scaler = GradScaler()
 
@@ -115,5 +116,6 @@ if __name__ == "__main__":
                         Ncrop_train=True,
                         Ncrop_val=False
                         )
+
     logger, net, optimizer, scheduler = setup_network(hps, get_best=False, device=device)
     run(net, logger, hps, optimizer, scheduler, num_workers=8, apply_class_weights=True)

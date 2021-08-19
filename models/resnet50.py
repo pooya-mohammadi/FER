@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from dropblock import DropBlock2D
+from dropblock import DropBlock2D, LinearScheduler
 
 filters = [64, 128, 256, 512]
 
@@ -36,8 +36,12 @@ class BottleNeck(nn.Module):
 
 
 class Resnet(nn.Module):
-    def __init__(self, block, num_classes=1000, layers=[3, 4, 6, 3], inchannels=3, **kwargs):
+    def __init__(self, block, num_classes=1000, layers=[3, 4, 6, 3], inchannels=3, drop_prob=0, block_size=0,
+                 n_steps=10, **kwargs):
         super(Resnet, self).__init__()
+        self.n_steps = n_steps
+        self.drop_prob = drop_prob
+        self.block_size = block_size
         self.conv1 = nn.Conv2d(inchannels, filters[0], kernel_size=7, stride=2, padding=3, bias=False)
         self.BN = nn.BatchNorm2d(filters[0])
         self.relu = nn.ReLU(inplace=True)
@@ -67,7 +71,9 @@ class Resnet(nn.Module):
                 nn.BatchNorm2d(out_channels * block.expantion)
             )
         if out_channels == filters[2] or out_channels == filters[3]:
-            dropblock = DropBlock2D(drop_prob=0.9, block_size=7)
+            dropblock = LinearScheduler(DropBlock2D(drop_prob=self.drop_prob, block_size=self.block_size),
+                                        start_value=0.1, stop_value=self.drop_prob,
+                                        nr_steps=self.n_steps)
         else:
             dropblock = None
 

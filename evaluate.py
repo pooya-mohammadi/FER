@@ -27,6 +27,9 @@ def correct_count(output, target, topk=(1,)):
 
 def evaluate(net, dataloader, criterion, device, name, save_path, Ncrop):
     net = net.eval()
+    if name == "Test":
+        net.drop_prob = 0
+
     loss_tr, n_samples = 0.0, 0.0
 
     y_pred = []
@@ -74,92 +77,13 @@ def evaluate(net, dataloader, criterion, device, name, save_path, Ncrop):
 
     acc1 = 100 * correct_count1 / n_samples
     acc2 = 100 * correct_count2 / n_samples
+
     loss = loss_tr / n_samples
     print_text = f"{name}\n"
     print_text += "--------------------------------------------------------\n"
     print_text += "Top 1 Accuracy: %2.6f %%" % acc1 + "\n"
     print_text += "Top 2 Accuracy: %2.6f %%" % acc2 + "\n"
-    print_text += "Loss: %2.6f" % loss + "\n"
-    print_text += "Precision: %2.6f" % precision_score(y_gt, y_pred, average='micro') + "\n"
-    print_text += "Recall: %2.6f" % recall_score(y_gt, y_pred, average='micro') + "\n"
-    print_text += "F1 Score: %2.6f" % f1_score(y_gt, y_pred, average='micro') + "\n"
-    print_text += "Confusion Matrix:\n" + str(confusion_matrix(y_gt, y_pred)) + '\n' + "\n"
-    print(print_text)
-    with open(os.path.join(save_path, name + '.txt'), mode='w') as f:
-        f.write(print_text)
 
-
-def evaluatetest(net, dataloader, criterion, device, name, save_path, Ncrop):
-    net = net.eval()
-    loss_tr, n_samples = 0.0, 0.0
-
-    y_pred = []
-    y_gt = []
-
-    correct_count1 = 0
-    correct_count2 = 0
-    with torch.no_grad():
-        for data in tqdm(dataloader, total=len(dataloader), leave=False, desc='Evaluation:'):
-            if name == "Test":
-                inputs, labels = data
-                labels = torch.LongTensor([labels])
-                # inputs = [inputs]
-                inputs = torch.stack(inputs, 0)
-
-                inputs = inputs.cuda(non_blocking=True)
-                labels = labels.cuda(non_blocking=True)
-                bs, ncrops, c, h, w = inputs.shape
-                inputs = inputs.view(-1, c, h, w)
-                outputs = net(inputs)
-                outputs = F.softmax(outputs, 1)
-                outputs = torch.sum(outputs, 0)
-                outputs = torch.unsqueeze(outputs, 0)
-
-
-            else:
-                inputs, labels = data
-                inputs, labels = inputs.to(device), labels.to(device)
-
-                # fuse crops and batchsize
-                if Ncrop:
-                    bs, ncrops, c, h, w = inputs.shape
-                    inputs = inputs.view(-1, c, h, w)
-                else:
-                    bs, c, h, w = inputs.shape
-                    ncrops = 1
-
-                # forward
-                outputs = net(inputs)
-
-                # combine results across the crops
-                outputs = outputs.view(bs, ncrops, -1)
-                outputs = torch.sum(outputs, dim=1) / ncrops
-
-            loss = criterion(outputs, labels)
-
-            # calculate performance metrics
-            loss_tr += loss.item()
-
-            # accuracy
-            counts = correct_count(outputs, labels, topk=(1, 2))
-            correct_count1 += counts[0].item()
-            correct_count2 += counts[1].item()
-
-            _, preds = torch.max(outputs.data, 1)
-            preds = preds.to("cpu")
-            labels = labels.to("cpu")
-            n_samples += labels.size(0)
-
-            y_pred.extend(pred.item() for pred in preds)
-            y_gt.extend(y.item() for y in labels)
-
-    acc1 = 100 * correct_count1 / n_samples
-    acc2 = 100 * correct_count2 / n_samples
-    loss = loss_tr / n_samples
-    print_text = f"{name}\n"
-    print_text += "--------------------------------------------------------\n"
-    print_text += "Top 1 Accuracy: %2.6f %%" % acc1 + "\n"
-    print_text += "Top 2 Accuracy: %2.6f %%" % acc2 + "\n"
     print_text += "Loss: %2.6f" % loss + "\n"
     print_text += "Precision: %2.6f" % precision_score(y_gt, y_pred, average='micro') + "\n"
     print_text += "Recall: %2.6f" % recall_score(y_gt, y_pred, average='micro') + "\n"
