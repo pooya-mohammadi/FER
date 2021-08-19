@@ -36,9 +36,10 @@ class BottleNeck(nn.Module):
 
 
 class Resnet(nn.Module):
-    def __init__(self, block, num_classes=1000, layers=[3, 4, 6, 3], inchannels=3, drop_prob=0, block_size=0,
+    def __init__(self, block, num_classes=1000, layers=[3, 4, 6, 3], inchannels=3, drop_prob=0, block_size=7,
                  n_steps=10, **kwargs):
         super(Resnet, self).__init__()
+        self.dropblock = None
         self.n_steps = n_steps
         self.drop_prob = drop_prob
         self.block_size = block_size
@@ -70,21 +71,22 @@ class Resnet(nn.Module):
                 nn.Conv2d(in_channels, out_channels * block.expantion, kernel_size=1, stride=stride, bias=False),
                 nn.BatchNorm2d(out_channels * block.expantion)
             )
+
         if out_channels == filters[2] or out_channels == filters[3]:
-            dropblock = LinearScheduler(DropBlock2D(drop_prob=self.drop_prob, block_size=self.block_size),
-                                        start_value=0.1, stop_value=self.drop_prob,
-                                        nr_steps=self.n_steps)
-        else:
-            dropblock = None
+            self.dropblock = LinearScheduler(DropBlock2D(drop_prob=self.drop_prob, block_size=self.block_size),
+                                             start_value=0.1, stop_value=self.drop_prob,
+                                             nr_steps=self.n_steps)
 
         layers = []
-        layers.append(block(in_channels, out_channels, stride=stride, transition=transition, dropblock=dropblock))
+        layers.append(block(in_channels, out_channels, stride=stride, transition=transition, dropblock=self.dropblock))
         for _ in range(1, layer_numbers):
             layers.append(block(out_channels * block.expantion, out_channels))
 
         return nn.Sequential(*layers)
 
     def forward(self, x):
+        self.dropblock.step()
+
         x = self.conv1(x)
         x = self.BN(x)
         x = self.relu(x)
@@ -99,6 +101,7 @@ class Resnet(nn.Module):
         x = torch.flatten(x, 1)
 
         x = self.fc(x)
+
 
         return x
 
