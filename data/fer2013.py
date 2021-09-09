@@ -8,6 +8,7 @@ from PIL import Image
 from torch.utils.data import Dataset
 import cv2
 from imgaug import augmenters as iaa
+from torch.utils.data import ConcatDataset
 
 
 class CustomDataset(Dataset):
@@ -171,6 +172,11 @@ def get_dataloaders(path, bs, num_workers, crop_size, augment, gussian_blur, rot
             test = RESCostumDataset('test', data=fer2013[fer2013['Usage'] == 'PrivateTest'], augment=augment,
                                     crop_size=crop_size,
                                     gussian_blur=gussian_blur, cutmix=cutmix, NoF=kwargs["NoF"])
+        if combine_val_train:
+            train = ConcatDataset((train, val))
+            trainloader = DataLoader(train, batch_size=bs, shuffle=True, num_workers=num_workers, pin_memory=True)
+            testloader = DataLoader(test, batch_size=1, shuffle=False, num_workers=num_workers, pin_memory=True)
+            return trainloader, None, testloader
 
         trainloader = DataLoader(train, batch_size=bs, shuffle=True, num_workers=num_workers, pin_memory=True)
         valloader = DataLoader(val, batch_size=bs, shuffle=False, num_workers=num_workers, pin_memory=True)

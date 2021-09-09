@@ -59,31 +59,53 @@ def run(net, logger, hps, optimizer, scheduler, num_workers, apply_class_weights
         logger.loss_train.append(loss_tr)
         logger.acc_train.append(acc_tr)
 
-        acc_v, loss_v = evaluate(net, valloader, criterion, Ncrop=hps['Ncrop_val'] if 'Ncrop_val' in hps else True)
-        logger.loss_val.append(loss_v)
-        logger.acc_val.append(acc_v)
+        if valloader is not None:
+            acc_v, loss_v = evaluate(net, valloader, criterion, Ncrop=hps['Ncrop_val'] if 'Ncrop_val' in hps else True)
+            logger.loss_val.append(loss_v)
+            logger.acc_val.append(acc_v)
 
-        # Update learning rate
-        scheduler.step(100 - acc_v)
+            # Update learning rate
+            if hps['network'] == 'resnet50_cbam':
+                scheduler.step(100 - acc_v)
+            else:
+                scheduler.step(acc_v)
 
-        if acc_v > logger.best_acc:
-            logger.best_acc = acc_v
-            logger.best_loss = loss_v
-            save(net, logger, hps, optimizer, scheduler, name='best')
+            if acc_v > logger.best_acc:
+                logger.best_acc = acc_v
+                logger.best_loss = loss_v
+                save(net, logger, hps, optimizer, scheduler, name='best')
+                logger.save_plt(hps)
+
+            if (epoch + 1) % hps['save_freq'] == 0:
+                # save(net, logger, hps, epoch + 1, optimizer, scheduler)
+                logger.save_plt(hps)
+            learning_rate = optimizer.param_groups[0]['lr']
+            print('Epoch %2d' % (epoch + 1),
+                  'Train Accuracy: %2.4f %%' % acc_tr,
+                  'Val Accuracy: %2.4f/%2.4f %%' % (acc_v, logger.best_acc),
+                  'Train Loss: %2.4f ' % loss_tr,
+                  'Val Loss: %2.4f/%2.4f ' % (loss_v, logger.best_loss),
+                  "LR: %2.6f " % learning_rate,
+                  sep='\t')
+            save(net, logger, hps, optimizer, scheduler, name='last')
+
+        else:
+            if epoch >= 20 and epoch % 10 == 0:
+                optimizer.param_groups[0]['lr'] /= 10
+
+            learning_rate = optimizer.param_groups[0]['lr']
+
             logger.save_plt(hps)
+            if (epoch + 1) % hps['save_freq'] == 0:
+                logger.save_plt(hps)
 
-        if (epoch + 1) % hps['save_freq'] == 0:
-            # save(net, logger, hps, epoch + 1, optimizer, scheduler)
-            logger.save_plt(hps)
-        learning_rate = optimizer.param_groups[0]['lr']
-        print('Epoch %2d' % (epoch + 1),
-              'Train Accuracy: %2.4f %%' % acc_tr,
-              'Val Accuracy: %2.4f/%2.4f %%' % (acc_v, logger.best_acc),
-              'Train Loss: %2.4f ' % loss_tr,
-              'Val Loss: %2.4f/%2.4f ' % (loss_v, logger.best_loss),
-              "LR: %2.6f " % learning_rate,
-              sep='\t')
-        save(net, logger, hps, optimizer, scheduler, name='last')
+            print('Epoch %2d' % (epoch + 1),
+                  'Train Accuracy: %2.4f %%' % acc_tr,
+                  'Train Loss: %2.4f ' % loss_tr,
+                  "LR: %2.6f " % learning_rate,
+                  sep='\t')
+            save(net, logger, hps, optimizer, scheduler, name='last')
+
 
     # Calculate performance on test set
     acc_test, loss_test = evaluate(net, testloader, criterion)
@@ -109,7 +131,7 @@ if __name__ == "__main__":
                         crop_size=224,
                         gussain_blur=False,
                         rotation_range=20,
-                        combine_val_train=False,
+                        combine_val_train=True,
                         cutmix=False,
                         cutmix_prop=0.5,
                         optim='radam',
