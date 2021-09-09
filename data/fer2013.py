@@ -63,10 +63,10 @@ class RESCostumDataset(Dataset):
         )
         if NoF:
             self.testtransform = transforms.Compose(
-                [transforms.Pad(2),
+                [transforms.ToPILImage(),
+                 transforms.Pad(2),
                  transforms.TenCrop(kwargs['crop_size']),
-                 transforms.ToPILImage(),
-                 transforms.ToTensor()
+                 transforms.Lambda(lambda crops: torch.stack([transforms.ToTensor()(crop) for crop in crops])),
                  ]
             )
         else:
@@ -118,7 +118,7 @@ class RESCostumDataset(Dataset):
         #     image = self.aug(image=image)
 
         if self.category == "val":
-            image = self.basetransform
+            image = self.basetransform(image)
 
         target = torch.tensor(self.emotions.iloc[idx].idxmax())
         return image, target
