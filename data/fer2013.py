@@ -156,8 +156,12 @@ def get_dataloaders(path, bs, num_workers, crop_size, augment, gussian_blur, rot
             fer2013_test, emotion_mapping_test = load_data(os.path.join(path, 'test.csv'))
             train = RESCostumDataset('train', data=fer2013_train, augment=augment, crop_size=crop_size,
                                      gussian_blur=gussian_blur, cutmix=cutmix)
-            val = RESCostumDataset('val', data=fer2013_val, augment=augment, crop_size=crop_size,
-                                   gussian_blur=gussian_blur, cutmix=cutmix)
+            if combine_val_train:
+                val = RESCostumDataset('train', data=fer2013_val, augment=augment, crop_size=crop_size,
+                                       gussian_blur=gussian_blur, cutmix=cutmix)
+            else:
+                val = RESCostumDataset('val', data=fer2013_val, augment=augment, crop_size=crop_size,
+                                       gussian_blur=gussian_blur, cutmix=cutmix)
             test = RESCostumDataset('test', data=fer2013_test, augment=augment, crop_size=crop_size,
                                     gussian_blur=gussian_blur, cutmix=cutmix, NoF=kwargs["NoF"])
 
@@ -166,9 +170,14 @@ def get_dataloaders(path, bs, num_workers, crop_size, augment, gussian_blur, rot
             train = RESCostumDataset('train', data=fer2013[fer2013['Usage'] == 'Training'], augment=augment,
                                      crop_size=crop_size,
                                      gussian_blur=gussian_blur, cutmix=cutmix)
-            val = RESCostumDataset('val', data=fer2013[fer2013['Usage'] == 'PublicTest'], augment=augment,
-                                   crop_size=crop_size,
-                                   gussian_blur=gussian_blur, cutmix=cutmix)
+            if combine_val_train:
+                val = RESCostumDataset('train', data=fer2013[fer2013['Usage'] == 'PublicTest'], augment=augment,
+                                       crop_size=crop_size,
+                                       gussian_blur=gussian_blur, cutmix=cutmix)
+            else:
+                val = RESCostumDataset('val', data=fer2013[fer2013['Usage'] == 'PublicTest'], augment=augment,
+                                       crop_size=crop_size,
+                                       gussian_blur=gussian_blur, cutmix=cutmix)
             test = RESCostumDataset('test', data=fer2013[fer2013['Usage'] == 'PrivateTest'], augment=augment,
                                     crop_size=crop_size,
                                     gussian_blur=gussian_blur, cutmix=cutmix, NoF=kwargs["NoF"])
