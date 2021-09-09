@@ -30,7 +30,10 @@ def run(net, logger, hps, optimizer, scheduler, num_workers, apply_class_weights
                                                              'imagesize'] if 'imagesize' in hps else False,
                                                          NoF=hps['NoF'] if 'NoF' in hps else False
                                                          )
-    net.n_steps = len(trainloader) * hps['n_epochs']
+    if 'use_dropblock' in hps:
+        net.n_steps = len(trainloader) * hps['n_epochs']
+        net.dropblock.drop_values = np.linspace(start=0.1, stop=net.drop_prob, num=net.n_steps)
+
     net = net.to(device)
     scaler = GradScaler()
 
@@ -105,7 +108,6 @@ def run(net, logger, hps, optimizer, scheduler, num_workers, apply_class_weights
                   "LR: %2.6f " % learning_rate,
                   sep='\t')
             save(net, logger, hps, optimizer, scheduler, name='last')
-
 
     # Calculate performance on test set
     acc_test, loss_test = evaluate(net, testloader, criterion)
