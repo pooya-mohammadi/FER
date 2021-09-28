@@ -43,7 +43,9 @@ class VggCBAM(nn.Module):
         self.bn5a = nn.BatchNorm2d(1024)
         self.bn5b = nn.BatchNorm2d(1024)
 
-        self.lin1 = nn.Linear(self.linear_size, 4096)
+        self.lin1 = nn.Linear(int(self.linear_size * self.crop / 20), 4096)
+        # self.lin1 = nn.Linear(int(self.linear_size), 4096)
+
         self.lin2 = nn.Linear(4096, 4096)
 
         self.cbam0 = CBAM(64, self.residual_cbam)
@@ -101,7 +103,7 @@ class VggCBAM(nn.Module):
         else:
             x = self.pool(x)
 
-        x = x.view(-1, self.linear_size)
+        x = x.view(-1, int(self.linear_size * self.crop / 20))
         x = F.relu(self.drop(self.lin1(x)))
         x = F.relu(self.drop(self.lin2(x)))
         x = self.classifier(x)
@@ -118,8 +120,8 @@ class VggCBAM(nn.Module):
 if __name__ == '__main__':
     from torchsummary import summary
 
-    crop = 40
-    model = VggCBAM(crop=crop).to('cuda')
+    crop = 80
+    model = VggCBAM(crop=80, cbam_blocks=(0, 1, 2, 3, 4), residual_cbam=True)
     # model.eval()
     model(torch.zeros((1, 1, crop, crop)).to('cuda'))
     summary(model, (1, crop, crop))
