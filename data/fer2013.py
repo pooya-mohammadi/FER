@@ -131,17 +131,19 @@ def load_data(path='datasets/fer2013/fer2013.csv'):
     return fer2013, emotion_mapping
 
 
-def prepare_data(data):
+def prepare_data(data, size=48):
     """ Prepare data for modeling
         input: data frame with labels und pixel data
         output: image and label array """
 
-    image_array = np.zeros(shape=(len(data), 48, 48))
+    image_array = np.zeros(shape=(len(data), size, size))
     image_label = np.array(list(map(int, data['emotion'])))
 
     for i, row in enumerate(data.index):
         image = np.fromstring(data.loc[row, 'pixels'], dtype=int, sep=' ')
         image = np.reshape(image, (48, 48))
+        if size != 48:
+            image = np.resize(image, (size, size))
         image_array[i] = image
 
     return image_array, image_label
@@ -205,19 +207,19 @@ def get_dataloaders(path, bs, num_workers, crop_size, augment, gussian_blur, rot
             fer2013_train, emotion_mapping_train = load_data(os.path.join(path, 'train.csv'))
             fer2013_val, emotion_mapping_val = load_data(os.path.join(path, 'val.csv'))
             fer2013_test, emotion_mapping_test = load_data(os.path.join(path, 'test.csv'))
-            xtrain, ytrain = prepare_data(fer2013_train)
-            xval, yval = prepare_data(fer2013_val)
-            xtest, ytest = prepare_data(fer2013_test)
+            xtrain, ytrain = prepare_data(fer2013_train, 80)
+            xval, yval = prepare_data(fer2013_val, 80)
+            xtest, ytest = prepare_data(fer2013_test, 80)
         else:
             fer2013, emotion_mapping = load_data(path)
-            xtrain, ytrain = prepare_data(fer2013[fer2013['Usage'] == 'Training'])
-            xval, yval = prepare_data(fer2013[fer2013['Usage'] == 'PublicTest'])
-            xtest, ytest = prepare_data(fer2013[fer2013['Usage'] == 'PrivateTest'])
+            xtrain, ytrain = prepare_data(fer2013[fer2013['Usage'] == 'Training'], 80)
+            xval, yval = prepare_data(fer2013[fer2013['Usage'] == 'PublicTest'], 80)
+            xtest, ytest = prepare_data(fer2013[fer2013['Usage'] == 'PrivateTest'], 80)
 
         mu, st = 0, 255
 
         test_transform = transforms.Compose([
-            transforms.Pad(2 if crop_size == 48 else 0),
+            # transforms.Pad(2 if crop_size == 48 else 0),
             transforms.TenCrop(crop_size),
             transforms.Lambda(lambda crops: torch.stack([transforms.ToTensor()(crop) for crop in crops])),
             transforms.Lambda(
@@ -226,12 +228,12 @@ def get_dataloaders(path, bs, num_workers, crop_size, augment, gussian_blur, rot
 
         if augment:
             train_transform = transforms.Compose([
-                transforms.RandomResizedCrop(48, scale=(0.8, 1.2)),
+                # transforms.RandomResizedCrop(48, scale=(0.8, 1.2)),
                 transforms.RandomApply([transforms.RandomAffine(0, translate=(0.2, 0.2))], p=0.5),
                 transforms.RandomHorizontalFlip(),
                 transforms.RandomApply([transforms.RandomRotation(rotation_range)], p=0.5),
                 transforms.RandomApply([transforms.GaussianBlur(3)], p=0.5 if gussian_blur else 0),
-                transforms.Pad(2 if crop_size == 48 else 0),
+                # transforms.Pad(2 if crop_size == 48 else 0),
                 transforms.TenCrop(crop_size),
                 transforms.Lambda(lambda crops: torch.stack([transforms.ToTensor()(crop) for crop in crops])),
                 transforms.Lambda(
