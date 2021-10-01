@@ -117,29 +117,32 @@ def run(net, logger, hps, optimizer, scheduler, num_workers, apply_class_weights
 
 
 if __name__ == "__main__":
-    hps = setup_hparams(name='resnet50_cbam',
-                        network='resnet50_cbam',
-                        pretrained=True,
-                        block=CbamBottleNeck,
-                        inchannels=3,
-                        classes=7,
-                        lr=0.0001,
-                        n_epochs=50,
-                        weight_decay=0.001,
-                        restore_epoch=0,
-                        imagesize=224,
-                        beta=-1,
-                        augment=True,
-                        crop_size=224,
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    hps = setup_hparams(name='vgg_cbam_cutmix_resize80',
+                        network='vgg_cbam_extended',
+                        crop_size=80,
+                        bs=8,
+                        cbam_blocks=(0, 1, 2, 3, 4),
+                        residual_cbam=True,
                         gussain_blur=False,
                         rotation_range=20,
-                        combine_val_train=True,
-                        cutmix=False,
+                        augment=True,
+                        combine_val_train=False,
+                        cutmix=True,
                         cutmix_prop=0.5,
-                        optim='radam',
-                        Ncrop_train=True,
-                        Ncrop_val=False
+                        restore_epoch=0,
+                        beta=1,
+                        data_path='../data/fer2013.csv',
+                        model_save_dir='.'
                         )
+    logger, net, optimizer, scheduler = setup_network(hps, get_best=True, device=device)
 
-    logger, net, optimizer, scheduler = setup_network(hps, get_best=False, device=device)
-    run(net, logger, hps, optimizer, scheduler, num_workers=8, apply_class_weights=True)
+    run(
+        net,
+        logger,
+        hps,
+        optimizer,
+        scheduler,
+        num_workers=4,
+        apply_class_weights=True
+    )

@@ -4,7 +4,6 @@ hps = {
     'network': 'vgg',  # which network do you want to train
     'name': 'my_vgg',  # whatever you want to name your run
     'n_epochs': 300,
-    'model_save_dir': "model_dir",  # where will checkpoints be stored (path created automatically using hps[name])
     'restore_epoch': None,  # continue training from a specific saved point
     'start_epoch': 0,
     'lr': 0.01,  # starting learning rate
@@ -14,6 +13,7 @@ hps = {
     'drop': 0.1,
     'bs': 2,
     'data_path': '../data/fer2013.csv',
+    'model_save_dir': ".",
     'crop_size': 40,
 
 }
@@ -49,7 +49,7 @@ def setup_hparams(name, network, **kwargs):
         raise ValueError("Invalid input parameters")
 
     # create checkpoint directory
-    hps['model_save_dir'] = os.path.join(os.getcwd(), 'checkpoints', hps['name'])
+    hps['model_save_dir'] = os.path.join(hps['model_save_dir'], 'checkpoints', hps['name'])
 
     os.makedirs(hps['model_save_dir'], exist_ok=True)
     print(hps)

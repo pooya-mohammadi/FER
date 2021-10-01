@@ -10,7 +10,7 @@ class VggCBAM(nn.Module):
         self.cbam_blocks = kwargs['cbam_blocks']
         self.residual_cbam = kwargs['residual_cbam']
         self.crop = crop
-        self.linear_size = 1024
+        self.linear_size = int(1024 * (self.crop / 40) ** 2)
         self.conv1a = nn.Conv2d(in_channels=1, out_channels=64, kernel_size=3, padding=1)
         self.conv1b = nn.Conv2d(64, out_channels=64, kernel_size=3, padding=1)
 
@@ -43,7 +43,7 @@ class VggCBAM(nn.Module):
         self.bn5a = nn.BatchNorm2d(1024)
         self.bn5b = nn.BatchNorm2d(1024)
 
-        self.lin1 = nn.Linear(int(self.linear_size * self.crop / 20), 4096)
+        self.lin1 = nn.Linear(self.linear_size, 4096)
         # self.lin1 = nn.Linear(int(self.linear_size), 4096)
 
         self.lin2 = nn.Linear(4096, 4096)
@@ -103,7 +103,7 @@ class VggCBAM(nn.Module):
         else:
             x = self.pool(x)
 
-        x = x.view(-1, int(self.linear_size * self.crop / 20))
+        x = x.view(-1, self.linear_size)
         x = F.relu(self.drop(self.lin1(x)))
         x = F.relu(self.drop(self.lin2(x)))
         x = self.classifier(x)
