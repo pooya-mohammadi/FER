@@ -4,7 +4,7 @@ In this repository we present our experiments on fer-2013 dataset
 
 
 # Download Dataset
-Download the offical [fer2013](https://www.kaggle.com/c/challenges-in-representation-learning-facial-expression-recognition-challenge/data) dataset, and place it in the dataset folder with the following folder structure `datasets/fer2013.csv`
+The offical Dataset [fer2013](https://www.kaggle.com/c/challenges-in-representation-learning-facial-expression-recognition-challenge/data) dataset is download and located in the data folder.
 
 
 ## 🤝 Team members
