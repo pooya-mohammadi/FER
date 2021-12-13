@@ -1,3 +1,4 @@
+from os.path import join
 from argparse import ArgumentParser
 import warnings
 import torch
@@ -10,12 +11,18 @@ from utils.checkpoint import save
 from utils.hparams import setup_hparams
 from utils.loops import train, evaluate
 from utils.setup_network import setup_network
+from deep_utils import ModelCheckPoint
 
 warnings.filterwarnings("ignore")
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
-def run(net, logger, hps, optimizer, scheduler, num_workers, apply_class_weights):
+def run(net, logger, hps, optimizer, scheduler, num_workers, apply_class_weights, model_path):
+    model_checkpointer = ModelCheckPoint(join(model_path, hps['network']),
+                                         net,
+                                         optimizer=optimizer,
+                                         scheduler=scheduler,
+                                         )
     trainloader, valloader, testloader = get_dataloaders(path=hps['data_path'],
                                                          bs=hps['bs'],
                                                          num_workers=num_workers,
@@ -65,6 +72,7 @@ def run(net, logger, hps, optimizer, scheduler, num_workers, apply_class_weights
 
         if valloader is not None:
             acc_v, loss_v = evaluate(net, valloader, criterion, Ncrop=hps['Ncrop_val'] if 'Ncrop_val' in hps else True)
+            model_checkpointer(loss_v)
             logger.loss_val.append(loss_v)
             logger.acc_val.append(acc_v)
 
@@ -91,7 +99,7 @@ def run(net, logger, hps, optimizer, scheduler, num_workers, apply_class_weights
                   'Val Loss: %2.4f/%2.4f ' % (loss_v, logger.best_loss),
                   "LR: %2.6f " % learning_rate,
                   sep='\t')
-            save(net, logger, hps, optimizer, scheduler, name='last')
+            # save(net, logger, hps, optimizer, scheduler, name='last')
 
         else:
             if epoch >= 20 and epoch % 10 == 0:
@@ -108,7 +116,8 @@ def run(net, logger, hps, optimizer, scheduler, num_workers, apply_class_weights
                   'Train Loss: %2.4f ' % loss_tr,
                   "LR: %2.6f " % learning_rate,
                   sep='\t')
-            save(net, logger, hps, optimizer, scheduler, name='last')
+            model_checkpointer(loss_tr)
+            # save(net, logger, hps, optimizer, scheduler, name='last')
 
     # Calculate performance on test set
     acc_test, loss_test = evaluate(net, testloader, criterion)
@@ -126,8 +135,9 @@ def parser_args():
     parser.add_argument('--augment', action='store_true', help='applies augmentation methods, default is false')
     parser.add_argument('--n-epochs', type=int, default=100, help='How many epochs for training')
     parser.add_argument('--dataset-dir', type=str, default='datasets/fer2013.csv', help='path to the dataset')
-    parser.add_argument('--n-workers', type=int, default=0, help="number of workers for dataloader")
+    parser.add_argument('--n-workers', type=int, default=4, help="number of workers for dataloader")
     parser.add_argument('--crop-size', type=int, default=40, help="crop size, for vgg use 40")
+    parser.add_argument('--model-path', type=str, default='checkpoints', help='model-path directory.')
     return parser.parse_args()
 
 
@@ -162,5 +172,6 @@ if __name__ == "__main__":
         optimizer,
         scheduler,
         num_workers=args.n_workers,
-        apply_class_weights=True
+        apply_class_weights=True,
+        model_path=args.model_path
     )
