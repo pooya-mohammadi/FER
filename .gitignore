@@ -1,8 +1,6 @@
-/datasets/
 .idea/
 __pycache__/
 .ipynb_checkpoints/ 
 checkpoints/
 outputs/
-
-*.sh
+datasets/*.csv
