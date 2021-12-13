@@ -1,3 +1,4 @@
+from argparse import ArgumentParser
 import warnings
 import torch
 import torch.nn as nn
@@ -116,24 +117,41 @@ def run(net, logger, hps, optimizer, scheduler, num_workers, apply_class_weights
           sep='\t\t')
 
 
+def parser_args():
+    parser = ArgumentParser()
+    parser.add_argument("--model-name", default='vgg', type=str, help='The model that you want to run')
+    parser.add_argument("--batch-size", default=2, type=int, help='batch size')
+    parser.add_argument("--cut-mix", action='store_true', help='uses cut-mix augmentation, default is false')
+    parser.add_argument("--residual-cbam", action='store_true', help='Adds residual cbam blocks to the architecture')
+    parser.add_argument('--augment', action='store_true', help='applies augmentation methods, default is false')
+    parser.add_argument('--n-epochs', type=int, default=100, help='How many epochs for training')
+    parser.add_argument('--dataset-dir', type=str, default='datasets/fer2013.csv', help='path to the dataset')
+    parser.add_argument('--n-workers', type=int, default=0, help="number of workers for dataloader")
+    parser.add_argument('--crop-size', type=int, default=40, help="crop size, for vgg use 40")
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
+    args = parser_args()
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    hps = setup_hparams(name='vgg_cbam_cutmix_resize80',
-                        network='vgg_cbam_extended',
-                        crop_size=80,
-                        bs=8,
+    hps = setup_hparams(name=args.model_name,
+                        network=args.model_name,
+                        crop_size=args.crop_size,
+                        bs=args.batch_size,
                         cbam_blocks=(0, 1, 2, 3, 4),
-                        residual_cbam=True,
+                        residual_cbam=args.residual_cbam,
                         gussain_blur=False,
                         rotation_range=20,
-                        augment=True,
+                        augment=args.augment,
                         combine_val_train=False,
-                        cutmix=True,
+                        cutmix=args.cut_mix,
                         cutmix_prop=0.5,
                         restore_epoch=0,
                         beta=1,
-                        data_path='../data/fer2013.csv',
-                        model_save_dir='.'
+                        data_path=args.dataset_dir,
+                        model_save_dir='.',
+                        n_epochs=args.n_epochs,
+                        n_workers=args.n_workers
                         )
     logger, net, optimizer, scheduler = setup_network(hps, get_best=True, device=device)
 
@@ -143,6 +161,6 @@ if __name__ == "__main__":
         hps,
         optimizer,
         scheduler,
-        num_workers=4,
+        num_workers=args.n_workers,
         apply_class_weights=True
     )

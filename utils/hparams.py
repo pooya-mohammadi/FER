@@ -41,7 +41,7 @@ def setup_hparams(name, network, **kwargs):
             hps['restore_epoch'] = int(hps['restore_epoch'])
             hps['start_epoch'] = int(hps['restore_epoch'])
 
-        # make sure we can checkpoint regularly or at least once (at the end)
+        # make sure we can save checkpoints regularly or at least at the end of training
         if hps['n_epochs'] < 20:
             hps['save_freq'] = min(5, hps['n_epochs'])
 

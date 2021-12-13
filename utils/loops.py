@@ -41,11 +41,6 @@ def train(net, dataloader, criterion, optimizer, scaler, cutmix_prop, beta=None,
             bs, ncrops, c, h, w = inputs.shape
             inputs = inputs.view(-1, c, h, w)
             labels = torch.repeat_interleave(labels, repeats=ncrops, dim=0)
-        # else:
-        #     bs, c, h, w = inputs.shape
-        #     inputs = inputs.view(-1, c, h, w)
-        #     ncrops = 1
-        # repeat labels ncrops times
 
         r = np.random.rand(1)
         if beta > 0 and r < cutmix_prop:
