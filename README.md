@@ -11,7 +11,7 @@ Download the official [fer2013](https://www.kaggle.com/c/challenges-in-represent
 
 # Train
 ## VGG
-`python train.py --model-name vgg --crop-size 40 --batch-size 8`
+`python train.py --model-name vgg --crop-size 40 --batch-size 8 --n-workers 4`
 
 ## 🤝 Team members
 
