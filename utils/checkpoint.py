@@ -52,6 +52,31 @@ def restore(net, logger, hps, optimizer, scheduler, get_best):
         hps['start_epoch'] = 0
 
 
+def model_restore(save_path, optimizer, scheduler,):
+    path = os.path.join(save_path, 'last')
+
+    if os.path.exists(path):
+        try:
+            checkpoint = torch.load(path)
+
+            net.load_state_dict(checkpoint['params'])
+
+            if 'optimizer' in checkpoint:
+                optimizer.load_state_dict(checkpoint['optimizer'])
+            if 'scheduler' in checkpoint:
+                scheduler.load_state_dict(checkpoint['scheduler'])
+            print(f"Network Restored from {path}!")
+
+        except Exception as e:
+            print("Restore Failed! Training from scratch.")
+            print(e)
+            # hps['start_epoch'] = 0
+
+    else:
+        print("Restore point unavailable. Training from scratch.")
+        # hps['start_epoch'] = 0
+
+
 def load_features(model, params):
     """ Load params into all layers of 'model'
         that are compatible, then freeze them"""

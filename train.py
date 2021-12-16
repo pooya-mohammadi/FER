@@ -138,6 +138,7 @@ def parser_args():
     parser.add_argument('--n-workers', type=int, default=4, help="number of workers for dataloader")
     parser.add_argument('--crop-size', type=int, default=40, help="crop size, for vgg use 40")
     parser.add_argument('--model-path', type=str, default='checkpoints', help='model-path directory.')
+    parser.add_argument('--restore-epoch', type=int, default=0, help='restore model trained before')
     return parser.parse_args()
 
 
@@ -156,7 +157,7 @@ if __name__ == "__main__":
                         combine_val_train=False,
                         cutmix=args.cut_mix,
                         cutmix_prop=0.5,
-                        restore_epoch=0,
+                        restore_epoch=args.restore_epoch,
                         beta=1,
                         data_path=args.dataset_dir,
                         model_save_dir='.',

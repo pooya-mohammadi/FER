@@ -2,7 +2,7 @@ import torch
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from models import vgg, efn, vgg_attention, vgg_bam, vgg_cbam, vgg_cbam_modified, vgg_cbam_extended, resnet50_cbam, \
     resnet50
-from utils.checkpoint import restore
+from utils.checkpoint import restore, model_restore
 from utils.logger import Logger
 from utils.radam import RAdam
 import torch.nn as nn
@@ -54,6 +54,6 @@ def setup_network(hps, get_best, device):
     # Prepare logger
     logger = Logger()
     if hps['restore_epoch'] or get_best:
-        restore(net, logger, hps, optimizer, scheduler, get_best)
-
+        # restore(net, logger, hps, optimizer, scheduler, get_best)
+        model_restore(hps['model_save_dir'], optimizer, scheduler)
     return logger, net, optimizer, scheduler
