@@ -18,7 +18,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
 def run(net, logger, hps, optimizer, scheduler, num_workers, apply_class_weights, model_path):
-    model_checkpointer = ModelCheckPoint(join(model_path, hps['network']),
+    model_checkpointer = ModelCheckPoint(join(model_path, hps['network'], hps['network']),
                                          net,
                                          optimizer=optimizer,
                                          scheduler=scheduler,
@@ -85,11 +85,9 @@ def run(net, logger, hps, optimizer, scheduler, num_workers, apply_class_weights
             if acc_v > logger.best_acc:
                 logger.best_acc = acc_v
                 logger.best_loss = loss_v
-                save(net, logger, hps, optimizer, scheduler, name='best')
                 logger.save_plt(hps)
 
             if (epoch + 1) % hps['save_freq'] == 0:
-                # save(net, logger, hps, epoch + 1, optimizer, scheduler)
                 logger.save_plt(hps)
             learning_rate = optimizer.param_groups[0]['lr']
             print('Epoch %2d' % (epoch + 1),
@@ -99,8 +97,6 @@ def run(net, logger, hps, optimizer, scheduler, num_workers, apply_class_weights
                   'Val Loss: %2.4f/%2.4f ' % (loss_v, logger.best_loss),
                   "LR: %2.6f " % learning_rate,
                   sep='\t')
-            # save(net, logger, hps, optimizer, scheduler, name='last')
-
         else:
             if epoch >= 20 and epoch % 10 == 0:
                 optimizer.param_groups[0]['lr'] /= 10
@@ -117,8 +113,6 @@ def run(net, logger, hps, optimizer, scheduler, num_workers, apply_class_weights
                   "LR: %2.6f " % learning_rate,
                   sep='\t')
             model_checkpointer(loss_tr)
-            # save(net, logger, hps, optimizer, scheduler, name='last')
-
     # Calculate performance on test set
     acc_test, loss_test = evaluate(net, testloader, criterion)
     print('Test Accuracy: %2.4f %%' % acc_test,
@@ -138,7 +132,10 @@ def parser_args():
     parser.add_argument('--n-workers', type=int, default=4, help="number of workers for dataloader")
     parser.add_argument('--crop-size', type=int, default=40, help="crop size, for vgg use 40")
     parser.add_argument('--model-path', type=str, default='checkpoints', help='model-path directory.')
-    parser.add_argument('--restore-epoch', type=int, default=0, help='restore model trained before')
+    parser.add_argument('--restore-epoch', type=int, default=0, help='restore model trained before, '
+                                                                     'default is 0 which indicates no restoring')
+    parser.add_argument('--restore-model', type=str, default='last',
+                        help='restore model, last or best. Default is last.')
     return parser.parse_args()
 
 
@@ -158,6 +155,7 @@ if __name__ == "__main__":
                         cutmix=args.cut_mix,
                         cutmix_prop=0.5,
                         restore_epoch=args.restore_epoch,
+                        restore_model=args.restore_model,
                         beta=1,
                         data_path=args.dataset_dir,
                         model_save_dir='.',

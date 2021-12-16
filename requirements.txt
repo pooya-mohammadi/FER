@@ -4,4 +4,4 @@ torchvision==0.11.1
 imgaug==0.4.0
 dropblock==0.3.0
 timm==0.4.12
-deep_utils==0.8.5
+deep_utils==0.8.7

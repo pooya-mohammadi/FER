@@ -31,9 +31,6 @@ def setup_network(hps, get_best, device):
             my_model = net.state_dict()
             count = 0
             for key, value in my_model.items():
-                # if count < len(my_model) - 2:
-                #     layer_name, weights = new[count]
-                #     my_model[key] = weights
                 layer_name, weights = new[count]
                 my_model[key] = weights
                 count += 1
@@ -53,7 +50,10 @@ def setup_network(hps, get_best, device):
 
     # Prepare logger
     logger = Logger()
-    if hps['restore_epoch'] or get_best:
-        # restore(net, logger, hps, optimizer, scheduler, get_best)
-        model_restore(hps['model_save_dir'], optimizer, scheduler)
+
+    # restore the model only if restore epoch is none other than zero.
+    if hps['restore_epoch'] > 0:
+        model_restore(hps['model_save_dir'], net, optimizer, scheduler, f"{hps['name']}_{hps['restore_model']}")
+    else:
+        print("[INFO] No Restoring, training from scratch!")
     return logger, net, optimizer, scheduler

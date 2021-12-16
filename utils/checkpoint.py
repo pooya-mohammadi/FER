@@ -1,5 +1,4 @@
 import os
-
 import torch
 
 
@@ -52,14 +51,14 @@ def restore(net, logger, hps, optimizer, scheduler, get_best):
         hps['start_epoch'] = 0
 
 
-def model_restore(save_path, optimizer, scheduler,):
-    path = os.path.join(save_path, 'last')
+def model_restore(save_path, net, optimizer, scheduler, restore_from: str):
+    path = os.path.join(save_path, restore_from)
 
     if os.path.exists(path):
         try:
             checkpoint = torch.load(path)
 
-            net.load_state_dict(checkpoint['params'])
+            net.load_state_dict(checkpoint['model_state_dict'])
 
             if 'optimizer' in checkpoint:
                 optimizer.load_state_dict(checkpoint['optimizer'])
@@ -69,7 +68,7 @@ def model_restore(save_path, optimizer, scheduler,):
 
         except Exception as e:
             print("Restore Failed! Training from scratch.")
-            print(e)
+            raise e
             # hps['start_epoch'] = 0
 
     else:
