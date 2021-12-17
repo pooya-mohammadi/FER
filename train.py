@@ -17,11 +17,12 @@ warnings.filterwarnings("ignore")
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
-def run(net, logger, hps, optimizer, scheduler, num_workers, apply_class_weights, model_path):
-    model_checkpointer = ModelCheckPoint(join(model_path, hps['network'], hps['network']),
+def run(net, logger, hps, optimizer, scheduler, num_workers, apply_class_weights, model_path, monitor_val):
+    model_checkpointer = ModelCheckPoint(join(model_path, hps['network'], hps['network'] + ".pt"),
                                          net,
                                          optimizer=optimizer,
                                          scheduler=scheduler,
+                                         monitor_val=monitor_val
                                          )
     trainloader, valloader, testloader = get_dataloaders(path=hps['data_path'],
                                                          bs=hps['bs'],
@@ -60,8 +61,8 @@ def run(net, logger, hps, optimizer, scheduler, num_workers, apply_class_weights
     else:
         criterion = nn.CrossEntropyLoss()
 
-    start_epoch = hps['restore_epoch'] if hps['restore_epoch'] is not None else hps['start_epoch']
-    print("Training", hps['name'], "on", device, " start_epoch: ", start_epoch)
+    start_epoch = hps['restore_epoch'] if hps['restore_epoch'] else hps['start_epoch']
+    print("[INFO] Training", hps['name'], "on", device, "restore_epoch: ", start_epoch)
 
     for epoch in range(start_epoch, hps['n_epochs']):
 
@@ -134,8 +135,7 @@ def parser_args():
     parser.add_argument('--model-path', type=str, default='checkpoints', help='model-path directory.')
     parser.add_argument('--restore-epoch', type=int, default=0, help='restore model trained before, '
                                                                      'default is 0 which indicates no restoring')
-    parser.add_argument('--restore-model', type=str, default='last',
-                        help='restore model, last or best. Default is last.')
+    parser.add_argument('--restore-path', type=str, default=None, help='restore model path, default is None!')
     return parser.parse_args()
 
 
@@ -155,14 +155,14 @@ if __name__ == "__main__":
                         cutmix=args.cut_mix,
                         cutmix_prop=0.5,
                         restore_epoch=args.restore_epoch,
-                        restore_model=args.restore_model,
+                        restore_path=args.restore_path,
                         beta=1,
                         data_path=args.dataset_dir,
                         model_save_dir='.',
                         n_epochs=args.n_epochs,
                         n_workers=args.n_workers
                         )
-    logger, net, optimizer, scheduler = setup_network(hps, get_best=True, device=device)
+    logger, net, optimizer, scheduler, monitor_val = setup_network(hps, device=device)
 
     run(
         net,
@@ -172,5 +172,6 @@ if __name__ == "__main__":
         scheduler,
         num_workers=args.n_workers,
         apply_class_weights=True,
-        model_path=args.model_path
+        model_path=args.model_path,
+        monitor_val=monitor_val
     )

@@ -52,5 +52,5 @@ def setup_hparams(name, network, **kwargs):
     hps['model_save_dir'] = os.path.join(hps['model_save_dir'], 'checkpoints', hps['name'])
 
     os.makedirs(hps['model_save_dir'], exist_ok=True)
-    print(hps)
+    print("[INFO] hyper-parameters: ", hps)
     return hps

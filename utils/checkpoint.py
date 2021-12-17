@@ -51,12 +51,10 @@ def restore(net, logger, hps, optimizer, scheduler, get_best):
         hps['start_epoch'] = 0
 
 
-def model_restore(save_path, net, optimizer, scheduler, restore_from: str):
-    path = os.path.join(save_path, restore_from)
-
-    if os.path.exists(path):
+def model_restore(net, optimizer, scheduler, restore_path: str):
+    if os.path.exists(restore_path):
         try:
-            checkpoint = torch.load(path)
+            checkpoint = torch.load(restore_path)
 
             net.load_state_dict(checkpoint['model_state_dict'])
 
@@ -64,16 +62,18 @@ def model_restore(save_path, net, optimizer, scheduler, restore_from: str):
                 optimizer.load_state_dict(checkpoint['optimizer'])
             if 'scheduler' in checkpoint:
                 scheduler.load_state_dict(checkpoint['scheduler'])
-            print(f"Network Restored from {path}!")
-
+            if 'monitor_val' in checkpoint:
+                monitor_val = checkpoint['monitor_val']
+            else:
+                monitor_val = None
+            print(f"[INFO] Network Restored from {restore_path}")
+            return monitor_val
         except Exception as e:
-            print("Restore Failed! Training from scratch.")
+            print("[ERROR] Restore Failed! Training from scratch.")
             raise e
-            # hps['start_epoch'] = 0
 
     else:
-        print("Restore point unavailable. Training from scratch.")
-        # hps['start_epoch'] = 0
+        print("[INFO] Restore point unavailable. Training from scratch.")
 
 
 def load_features(model, params):

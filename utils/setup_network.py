@@ -20,7 +20,7 @@ nets = {
 }
 
 
-def setup_network(hps, get_best, device):
+def setup_network(hps, device):
     if hps['network'] == 'resnet50_cbam':
         net = nets[hps['network']](**hps)
         if 'pretrained' in hps.keys() and hps['pretrained'] == True:
@@ -51,9 +51,10 @@ def setup_network(hps, get_best, device):
     # Prepare logger
     logger = Logger()
 
-    # restore the model only if restore epoch is none other than zero.
-    if hps['restore_epoch'] > 0:
-        model_restore(hps['model_save_dir'], net, optimizer, scheduler, f"{hps['name']}_{hps['restore_model']}")
+    # restore the model only if restore_path is provided.
+    if hps['restore_path'] is not None:
+        monitor_val = model_restore(net, optimizer, scheduler, hps['restore_path'])
     else:
+        monitor_val = None
         print("[INFO] No Restoring, training from scratch!")
-    return logger, net, optimizer, scheduler
+    return logger, net, optimizer, scheduler, monitor_val
