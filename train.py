@@ -136,6 +136,7 @@ def parser_args():
     parser.add_argument('--restore-epoch', type=int, default=0, help='restore model trained before, '
                                                                      'default is 0 which indicates no restoring')
     parser.add_argument('--restore-path', type=str, default=None, help='restore model path, default is None!')
+    parser.add_argument('--lr-decay', type=float, default=0.1, help='learning rate decay factor, default is 0.1')
     return parser.parse_args()
 
 
@@ -160,7 +161,8 @@ if __name__ == "__main__":
                         data_path=args.dataset_dir,
                         model_save_dir='.',
                         n_epochs=args.n_epochs,
-                        n_workers=args.n_workers
+                        n_workers=args.n_workers,
+                        lr_decay=args.lr_decay
                         )
     logger, net, optimizer, scheduler, monitor_val = setup_network(hps, device=device)
 
