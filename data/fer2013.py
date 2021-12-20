@@ -41,9 +41,11 @@ class CustomDataset(Dataset):
 class RESCostumDataset(Dataset):
     mu, st = 0, 255
 
-    def __init__(self, category, data, image_size=224, number_of_test=10, augment=True, NoF=False, **kwargs):
+    def __init__(self, category, data, image_size=224, number_of_test=10,
+                 augment=True, NoF=False, rotation_degree=0, n_channel=1, **kwargs):
         self.category = category
         self.data = data
+        self.n_channel = n_channel
         self.pixels = self.data['pixels'].tolist()
         self.emotions = pd.get_dummies(self.data['emotion'])
         self.augment = augment
@@ -51,10 +53,10 @@ class RESCostumDataset(Dataset):
         self.NoF = NoF
         self.image_size = (image_size, image_size)
         self.applytransform = True
-        self.aug = iaa.Sequential(
-            [iaa.Fliplr(p=0.5),
-             iaa.Affine(rotate=(-30, 30))]
-        )
+        # self.aug = iaa.Sequential(
+        #     [iaa.Fliplr(p=0.5),
+        #      iaa.Affine(rotate=(-30, 30))]
+        # )
         self.basetransform = transforms.Compose(
             [
                 transforms.ToPILImage(),
@@ -75,8 +77,9 @@ class RESCostumDataset(Dataset):
         if augment:
             self.traintransform = transforms.Compose(
                 [transforms.ToPILImage(),
+                 transforms.RandomRotation(rotation_degree),
                  # transforms.RandomApply([transforms.RandomAffine(0, translate=(0.2, 0.2))], p=0.5),
-                 # transforms.RandomHorizontalFlip(),
+                 transforms.RandomHorizontalFlip(),
                  # transforms.RandomApply([transforms.GaussianBlur(3)], p=0.5 if kwargs["gussian_blur"] else 0),
                  transforms.Pad(2),
                  transforms.TenCrop(kwargs["crop_size"]),
@@ -98,11 +101,12 @@ class RESCostumDataset(Dataset):
     def __getitem__(self, idx):
         pixels = self.pixels[idx]
         pixels = list(map(int, pixels.split(" ")))
-        image = np.reshape(pixels, (48, 48)).astype(np.uint8)
+        image = np.reshape(pixels, (48, 48)).astype(np.uint8)  # the pixels are in 48*48. the static set is correct
         image = cv2.resize(image, self.image_size)
-        image = np.dstack([image] * 3)
+        image = np.dstack([image] * self.n_channel)
         if self.category == 'train':
-            image = self.aug(image=image)
+            # if self.augment:
+            #     image = self.aug(image=image)
             image = self.traintransform(image)
             # target = torch.tensor(self.emotions.iloc[idx].idxmax())
             # return image, target
@@ -131,19 +135,17 @@ def load_data(path='datasets/fer2013/fer2013.csv'):
     return fer2013, emotion_mapping
 
 
-def prepare_data(data, size=48):
+def prepare_data(data):
     """ Prepare data for modeling
         input: data frame with labels und pixel data
         output: image and label array """
 
-    image_array = np.zeros(shape=(len(data), size, size))
+    image_array = np.zeros(shape=(len(data), 48, 48))
     image_label = np.array(list(map(int, data['emotion'])))
 
     for i, row in enumerate(data.index):
         image = np.fromstring(data.loc[row, 'pixels'], dtype=int, sep=' ')
         image = np.reshape(image, (48, 48))
-        if size != 48:
-            image = np.resize(image, (size, size))
         image_array[i] = image
 
     return image_array, image_label
@@ -207,14 +209,14 @@ def get_dataloaders(path, bs, num_workers, crop_size, augment, gussian_blur, rot
             fer2013_train, emotion_mapping_train = load_data(os.path.join(path, 'train.csv'))
             fer2013_val, emotion_mapping_val = load_data(os.path.join(path, 'val.csv'))
             fer2013_test, emotion_mapping_test = load_data(os.path.join(path, 'test.csv'))
-            xtrain, ytrain = prepare_data(fer2013_train, 80)
-            xval, yval = prepare_data(fer2013_val, 80)
-            xtest, ytest = prepare_data(fer2013_test, 80)
+            xtrain, ytrain = prepare_data(fer2013_train)
+            xval, yval = prepare_data(fer2013_val)
+            xtest, ytest = prepare_data(fer2013_test)
         else:
             fer2013, emotion_mapping = load_data(path)
-            xtrain, ytrain = prepare_data(fer2013[fer2013['Usage'] == 'Training'], 80)
-            xval, yval = prepare_data(fer2013[fer2013['Usage'] == 'PublicTest'], 80)
-            xtest, ytest = prepare_data(fer2013[fer2013['Usage'] == 'PrivateTest'], 80)
+            xtrain, ytrain = prepare_data(fer2013[fer2013['Usage'] == 'Training'])
+            xval, yval = prepare_data(fer2013[fer2013['Usage'] == 'PublicTest'])
+            xtest, ytest = prepare_data(fer2013[fer2013['Usage'] == 'PrivateTest'])
 
         mu, st = 0, 255
 

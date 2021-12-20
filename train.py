@@ -130,7 +130,7 @@ def parser_args():
     parser.add_argument('--augment', action='store_true', help='applies augmentation methods, default is false')
     parser.add_argument('--n-epochs', type=int, default=100, help='How many epochs for training')
     parser.add_argument('--dataset-dir', type=str, default='datasets/fer2013.csv', help='path to the dataset')
-    parser.add_argument('--n-workers', type=int, default=4, help="number of workers for dataloader")
+    parser.add_argument('--n-workers', type=int, default=0, help="number of workers for dataloader")
     parser.add_argument('--crop-size', type=int, default=40, help="crop size, for vgg use 40")
     parser.add_argument('--model-path', type=str, default='checkpoints', help='model-path directory.')
     parser.add_argument('--restore-epoch', type=int, default=0, help='restore model trained before, '
