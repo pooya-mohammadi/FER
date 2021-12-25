@@ -14,6 +14,13 @@ Download the official [fer2013](https://www.kaggle.com/c/challenges-in-represent
 ## VGG
 `python train.py --model-name vgg --crop-size 40 --batch-size 8 --n-workers 4`
 
+
+## Results
+
+Model | Val ACC | Test Acc 
+--- |-------------|-------------|
+VGG | 70.8833  | 72.0814
+
 ## 🤝 Team members
 
 <table>
