@@ -1,0 +1,56 @@
+network: "vgg"
+model_path: "checkpoints"
+device: 'cuda'
+epochs: 100
+seed: 1234
+
+model:
+  name: "vgg"
+  dropout_p: 0.4
+  n_classes: 7
+  in_channels: 3
+
+
+optimizer:
+  lr: 0.01
+  momentum: 0.9
+  nesterov: false
+  weight_decay: 0.0001
+  mode: "max"
+  lr_decay: 0.1
+  lr_patience: 25
+  min_lr: 0.00001
+  verbose: true
+  monitor_val: none
+
+
+dataset:
+  train_path: "datasets/train"
+  val_path: "datasets/val"
+  test_path: "datasets/test"
+  img_w: 48
+  img_h: 48
+  img_channel: 3
+  train_shuffle: true
+  val_shuffle: true
+  test_shuffle: false
+  batch_size: 32
+  num_workers: 6
+
+
+augmentation:
+  name: "normal"
+  mean: 0
+  std: 1
+  cutmix: 0
+
+loss:
+  name: "cross_entropy"
+  class_weight: [ 1.02660468,
+           9.40661861,
+           1.00104606,
+           0.56843877,
+           0.84912748,
+           1.29337298,
+           0.82603942,
+  ]

@@ -1,7 +1,12 @@
-torchsummary==1.5.1
-torch==1.10.0
-torchvision==0.11.1
+torchsummary>=1.5.1
+torch>=1.10.0
+torchvision>=0.11.1
 imgaug==0.4.0
 dropblock==0.3.0
-timm==0.4.12
-deep_utils==0.8.8
+timm>=0.4.12
+deep_utils>=0.8.8
+numpy>=1.21.0
+pandas>=1.4.0
+opencv-python>=4.5.5.58
+tqdm>=4.60.0
+albumentations>=1.0.0

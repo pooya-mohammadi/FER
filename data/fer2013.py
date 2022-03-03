@@ -4,19 +4,21 @@ import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 import numpy as np
 import torch
-from PIL import Image
 from torch.utils.data import Dataset
-import cv2
-from imgaug import augmenters as iaa
 from torch.utils.data import ConcatDataset
+import cv2
+from deep_utils import crawl_directory_dataset, log_print
+from data.augmetations import get_augmentation
+from settings import EMOTION_NAME2ID
+from utils.config_utils import Config
 
 
 class CustomDataset(Dataset):
-    def __init__(self, images, labels, transform=None, augment=False):
+    def __init__(self, images, labels, transform=None, logger=None, verbose=1):
         self.images = images
         self.labels = labels
         self.transform = transform
-        self.augment = augment
+        log_print(logger, f"Successfully created {self.__class__.__name__}, samples: {len(self)}", verbose=verbose)
 
     def __len__(self):
         return len(self.images)
@@ -24,115 +26,110 @@ class CustomDataset(Dataset):
     def __getitem__(self, idx):
         if torch.is_tensor(idx):
             idx = idx.tolist()
-
-        img = np.array(self.images[idx])
-
-        img = Image.fromarray(img)
-
-        if self.transform:
-            img = self.transform(img)
-
+        img_address = self.images[idx]
+        img = cv2.imread(img_address)[..., ::-1]  # BGR2RGB
+        img = self.transform(image=img)['image']
         label = torch.tensor(self.labels[idx]).type(torch.long)
         sample = (img, label)
 
         return sample
 
 
-class RESCostumDataset(Dataset):
-    mu, st = 0, 255
-
-    def __init__(self, category, data, image_size=224, number_of_test=10,
-                 augment=True, NoF=False, rotation_degree=0, n_channel=1, **kwargs):
-        self.category = category
-        self.data = data
-        self.n_channel = n_channel
-        self.pixels = self.data['pixels'].tolist()
-        self.emotions = pd.get_dummies(self.data['emotion'])
-        self.augment = augment
-        self.test_number = number_of_test
-        self.NoF = NoF
-        self.image_size = (image_size, image_size)
-        self.applytransform = True
-        # self.aug = iaa.Sequential(
-        #     [iaa.Fliplr(p=0.5),
-        #      iaa.Affine(rotate=(-30, 30))]
-        # )
-        self.basetransform = transforms.Compose(
-            [
-                transforms.ToPILImage(),
-                transforms.ToTensor()
-            ]
-        )
-        if NoF:
-            self.testtransform = transforms.Compose(
-                [transforms.ToPILImage(),
-                 transforms.Pad(2),
-                 transforms.TenCrop(kwargs['crop_size']),
-                 transforms.Lambda(lambda crops: torch.stack([transforms.ToTensor()(crop) for crop in crops])),
-                 ]
-            )
-        else:
-            self.testtransform = self.basetransform
-
-        if augment:
-            self.traintransform = transforms.Compose(
-                [transforms.ToPILImage(),
-                 transforms.RandomRotation(rotation_degree),
-                 # transforms.RandomApply([transforms.RandomAffine(0, translate=(0.2, 0.2))], p=0.5),
-                 transforms.RandomHorizontalFlip(),
-                 # transforms.RandomApply([transforms.GaussianBlur(3)], p=0.5 if kwargs["gussian_blur"] else 0),
-                 transforms.Pad(2),
-                 transforms.TenCrop(kwargs["crop_size"]),
-                 transforms.Lambda(lambda crops: torch.stack([transforms.ToTensor()(crop) for crop in crops])),
-                 # transforms.Lambda(
-                 #     lambda tensors: torch.stack(
-                 #         [transforms.Normalize(mean=(self.mu,), std=(self.st,))(t) for t in tensors])),
-                 # transforms.Lambda(
-                 #     lambda tensors: torch.stack(
-                 #         [transforms.RandomErasing(p=0 if kwargs["cutmix"] else 0.5)(t) for t in tensors])),
-                 ]
-            )
-        else:
-            self.traintransform = self.basetransform
-
-    def __len__(self):
-        return len(self.pixels)
-
-    def __getitem__(self, idx):
-        pixels = self.pixels[idx]
-        pixels = list(map(int, pixels.split(" ")))
-        image = np.reshape(pixels, (48, 48)).astype(np.uint8)  # the pixels are in 48*48. the static set is correct
-        image = cv2.resize(image, self.image_size)
-        image = np.dstack([image] * self.n_channel)
-        if self.category == 'train':
-            # if self.augment:
-            #     image = self.aug(image=image)
-            image = self.traintransform(image)
-            # target = torch.tensor(self.emotions.iloc[idx].idxmax())
-            # return image, target
-        if self.category == "test":
-            image = self.testtransform(image)
-        # if self.NoF:
-        #     images = [self.aug(image=image) for i in range(self.test_number)]
-        #     images = [image for i in range(self.test_number)]
-        #     images = list(map(self.testtransform, images))
-        #     target = self.emotions.iloc[idx].idxmax()
-        #     return images, target
-        # else:
-        #     image = self.aug(image=image)
-
-        if self.category == "val":
-            image = self.basetransform(image)
-
-        target = torch.tensor(self.emotions.iloc[idx].idxmax())
-        return image, target
+# class RESCustomDataset(Dataset):
+#     mu, st = 0, 255
+#
+#     def __init__(self, category, data, image_size=224, number_of_test=10,
+#                  augment=True, NoF=False, rotation_degree=0, n_channel=1, **kwargs):
+#         self.category = category
+#         self.data = data
+#         self.n_channel = n_channel
+#         self.pixels = self.data['pixels'].tolist()
+#         self.emotions = pd.get_dummies(self.data['emotion'])
+#         self.augment = augment
+#         self.test_number = number_of_test
+#         self.NoF = NoF
+#         self.image_size = (image_size, image_size)
+#         self.applytransform = True
+#         # self.aug = iaa.Sequential(
+#         #     [iaa.Fliplr(p=0.5),
+#         #      iaa.Affine(rotate=(-30, 30))]
+#         # )
+#         self.basetransform = transforms.Compose(
+#             [
+#                 transforms.ToPILImage(),
+#                 transforms.ToTensor()
+#             ]
+#         )
+#         if NoF:
+#             self.testtransform = transforms.Compose(
+#                 [transforms.ToPILImage(),
+#                  transforms.Pad(2),
+#                  transforms.TenCrop(kwargs['crop_size']),
+#                  transforms.Lambda(lambda crops: torch.stack([transforms.ToTensor()(crop) for crop in crops])),
+#                  ]
+#             )
+#         else:
+#             self.testtransform = self.basetransform
+#
+#         if augment:
+#             self.traintransform = transforms.Compose(
+#                 [transforms.ToPILImage(),
+#                  transforms.RandomRotation(rotation_degree),
+#                  # transforms.RandomApply([transforms.RandomAffine(0, translate=(0.2, 0.2))], p=0.5),
+#                  transforms.RandomHorizontalFlip(),
+#                  # transforms.RandomApply([transforms.GaussianBlur(3)], p=0.5 if kwargs["gussian_blur"] else 0),
+#                  transforms.Pad(2),
+#                  transforms.TenCrop(kwargs["crop_size"]),
+#                  transforms.Lambda(lambda crops: torch.stack([transforms.ToTensor()(crop) for crop in crops])),
+#                  # transforms.Lambda(
+#                  #     lambda tensors: torch.stack(
+#                  #         [transforms.Normalize(mean=(self.mu,), std=(self.st,))(t) for t in tensors])),
+#                  # transforms.Lambda(
+#                  #     lambda tensors: torch.stack(
+#                  #         [transforms.RandomErasing(p=0 if kwargs["cutmix"] else 0.5)(t) for t in tensors])),
+#                  ]
+#             )
+#         else:
+#             self.traintransform = self.basetransform
+#
+#     def __len__(self):
+#         return len(self.pixels)
+#
+#     def __getitem__(self, idx):
+#         pixels = self.pixels[idx]
+#         pixels = list(map(int, pixels.split(" ")))
+#         image = np.reshape(pixels, (48, 48)).astype(np.uint8)  # the pixels are in 48*48. the static set is correct
+#         image = cv2.resize(image, self.image_size)
+#         image = np.dstack([image] * self.n_channel)
+#         if self.category == 'train':
+#             # if self.augment:
+#             #     image = self.aug(image=image)
+#             image = self.traintransform(image)
+#             # target = torch.tensor(self.emotions.iloc[idx].idxmax())
+#             # return image, target
+#         if self.category == "test":
+#             image = self.testtransform(image)
+#         # if self.NoF:
+#         #     images = [self.aug(image=image) for i in range(self.test_number)]
+#         #     images = [image for i in range(self.test_number)]
+#         #     images = list(map(self.testtransform, images))
+#         #     target = self.emotions.iloc[idx].idxmax()
+#         #     return images, target
+#         # else:
+#         #     image = self.aug(image=image)
+#
+#         if self.category == "val":
+#             image = self.basetransform(image)
+#
+#         target = torch.tensor(self.emotions.iloc[idx].idxmax())
+#         return image, target
 
 
 def load_data(path='datasets/fer2013/fer2013.csv'):
     fer2013 = pd.read_csv(path)
-    emotion_mapping = {0: 'Angry', 1: 'Disgust', 2: 'Fear', 3: 'Happy', 4: 'Sad', 5: 'Surprise', 6: 'Neutral'}
+    EMOTION_NAME2IDping = {0: 'Angry', 1: 'Disgust', 2: 'Fear', 3: 'Happy', 4: 'Sad', 5: 'Surprise', 6: 'Neutral'}
 
-    return fer2013, emotion_mapping
+    return fer2013, EMOTION_NAME2IDping
 
 
 def prepare_data(data):
@@ -151,116 +148,29 @@ def prepare_data(data):
     return image_array, image_label
 
 
-def get_dataloaders(path, bs, num_workers, crop_size, augment, gussian_blur, rotation_range, combine_val_train, cutmix,
-                    **kwargs):
-    if kwargs['network'] == 'resnet50_cbam':
-        if os.path.isdir(path):
-            fer2013_train, emotion_mapping_train = load_data(os.path.join(path, 'train.csv'))
-            fer2013_val, emotion_mapping_val = load_data(os.path.join(path, 'val.csv'))
-            fer2013_test, emotion_mapping_test = load_data(os.path.join(path, 'test.csv'))
-            train = RESCostumDataset('train', data=fer2013_train, augment=augment, crop_size=crop_size,
-                                     gussian_blur=gussian_blur, cutmix=cutmix)
-            if combine_val_train:
-                val = RESCostumDataset('train', data=fer2013_val, augment=augment, crop_size=crop_size,
-                                       gussian_blur=gussian_blur, cutmix=cutmix)
-            else:
-                val = RESCostumDataset('val', data=fer2013_val, augment=augment, crop_size=crop_size,
-                                       gussian_blur=gussian_blur, cutmix=cutmix)
-            test = RESCostumDataset('test', data=fer2013_test, augment=augment, crop_size=crop_size,
-                                    gussian_blur=gussian_blur, cutmix=cutmix, NoF=kwargs["NoF"])
+def get_data_loaders(config: Config, logger=None, verbose=1):
+    train_transform, val_transform, test_transform = get_augmentation(config.augmentation.name,
+                                                                      img_h=config.dataset.img_h,
+                                                                      img_w=config.dataset.img_w,
+                                                                      mean=config.augmentation.mean,
+                                                                      std=config.augmentation.std)
 
-        else:
-            fer2013, emotion_mapping = load_data(path)
-            train = RESCostumDataset('train', data=fer2013[fer2013['Usage'] == 'Training'], augment=augment,
-                                     crop_size=crop_size,
-                                     gussian_blur=gussian_blur, cutmix=cutmix)
-            if combine_val_train:
-                val = RESCostumDataset('train', data=fer2013[fer2013['Usage'] == 'PublicTest'], augment=augment,
-                                       crop_size=crop_size,
-                                       gussian_blur=gussian_blur, cutmix=cutmix)
-            else:
-                val = RESCostumDataset('val', data=fer2013[fer2013['Usage'] == 'PublicTest'], augment=augment,
-                                       crop_size=crop_size,
-                                       gussian_blur=gussian_blur, cutmix=cutmix)
-            test = RESCostumDataset('test', data=fer2013[fer2013['Usage'] == 'PrivateTest'], augment=augment,
-                                    crop_size=crop_size,
-                                    gussian_blur=gussian_blur, cutmix=cutmix, NoF=kwargs["NoF"])
-        if combine_val_train:
-            train = ConcatDataset((train, val))
-            trainloader = DataLoader(train, batch_size=bs, shuffle=True, num_workers=num_workers, pin_memory=True)
-            testloader = DataLoader(test, batch_size=1, shuffle=False, num_workers=num_workers, pin_memory=True)
-            return trainloader, None, testloader
+    train_address, train_labels = crawl_directory_dataset(config.dataset.train_path, label_map_dict=EMOTION_NAME2ID,
+                                                          logger=logger, verbose=verbose)
+    val_address, val_labels = crawl_directory_dataset(config.dataset.val_path, label_map_dict=EMOTION_NAME2ID,
+                                                      logger=logger, verbose=verbose)
+    test_address, test_labels = crawl_directory_dataset(config.dataset.test_path, label_map_dict=EMOTION_NAME2ID,
+                                                        logger=logger, verbose=verbose)
 
-        trainloader = DataLoader(train, batch_size=bs, shuffle=True, num_workers=num_workers, pin_memory=True)
-        valloader = DataLoader(val, batch_size=bs, shuffle=False, num_workers=num_workers, pin_memory=True)
-        testloader = DataLoader(test, batch_size=1, shuffle=False, num_workers=num_workers, pin_memory=True)
+    train_dataset = CustomDataset(train_address, train_labels, transform=train_transform, logger=logger)
+    val_dataset = CustomDataset(val_address, val_labels, transform=val_transform, logger=logger)
+    test_dataset = CustomDataset(test_address, test_labels, transform=test_transform, logger=logger)
 
+    train_loader = DataLoader(train_dataset, config.dataset.batch_size, config.dataset.train_shuffle,
+                              num_workers=config.dataset.num_workers)
+    val_loader = DataLoader(val_dataset, config.dataset.batch_size, config.dataset.val_shuffle,
+                            num_workers=config.dataset.num_workers)
+    test_loader = DataLoader(test_dataset, config.dataset.batch_size, config.dataset.test_shuffle,
+                             num_workers=config.dataset.num_workers)
 
-    else:
-        """ Prepare train, val, & test dataloaders
-            Augment training data using:
-                - cropping
-                - shifting (vertical/horizental)
-                - horizental flipping
-                - rotation
-            input: path to fer2013 csv file
-            output: (Dataloader, Dataloader, Dataloader) """
-        if os.path.isdir(path):
-            fer2013_train, emotion_mapping_train = load_data(os.path.join(path, 'train.csv'))
-            fer2013_val, emotion_mapping_val = load_data(os.path.join(path, 'val.csv'))
-            fer2013_test, emotion_mapping_test = load_data(os.path.join(path, 'test.csv'))
-            xtrain, ytrain = prepare_data(fer2013_train)
-            xval, yval = prepare_data(fer2013_val)
-            xtest, ytest = prepare_data(fer2013_test)
-        else:
-            fer2013, emotion_mapping = load_data(path)
-            xtrain, ytrain = prepare_data(fer2013[fer2013['Usage'] == 'Training'])
-            xval, yval = prepare_data(fer2013[fer2013['Usage'] == 'PublicTest'])
-            xtest, ytest = prepare_data(fer2013[fer2013['Usage'] == 'PrivateTest'])
-
-        mu, st = 0, 255
-
-        test_transform = transforms.Compose([
-            # transforms.Pad(2 if crop_size == 48 else 0),
-            transforms.TenCrop(crop_size),
-            transforms.Lambda(lambda crops: torch.stack([transforms.ToTensor()(crop) for crop in crops])),
-            transforms.Lambda(
-                lambda tensors: torch.stack([transforms.Normalize(mean=(mu,), std=(st,))(t) for t in tensors])),
-        ])
-
-        if augment:
-            train_transform = transforms.Compose([
-                # transforms.RandomResizedCrop(48, scale=(0.8, 1.2)),
-                transforms.RandomApply([transforms.RandomAffine(0, translate=(0.2, 0.2))], p=0.5),
-                transforms.RandomHorizontalFlip(),
-                transforms.RandomApply([transforms.RandomRotation(rotation_range)], p=0.5),
-                transforms.RandomApply([transforms.GaussianBlur(3)], p=0.5 if gussian_blur else 0),
-                # transforms.Pad(2 if crop_size == 48 else 0),
-                transforms.TenCrop(crop_size),
-                transforms.Lambda(lambda crops: torch.stack([transforms.ToTensor()(crop) for crop in crops])),
-                transforms.Lambda(
-                    lambda tensors: torch.stack([transforms.Normalize(mean=(mu,), std=(st,))(t) for t in tensors])),
-                transforms.Lambda(
-                    lambda tensors: torch.stack(
-                        [transforms.RandomErasing(p=0 if cutmix else 0.5)(t) for t in tensors])),
-            ])
-        else:
-            train_transform = test_transform
-        if combine_val_train:
-            xtrain = np.concatenate([xtrain, xval], axis=0)
-            ytrain = np.concatenate([ytrain, yval], axis=0)
-            train = CustomDataset(xtrain, ytrain, train_transform)
-            test = CustomDataset(xtest, ytest, test_transform)
-
-            trainloader = DataLoader(train, batch_size=bs, shuffle=True, num_workers=num_workers)
-            testloader = DataLoader(test, batch_size=bs, shuffle=True, num_workers=num_workers)
-            return trainloader, testloader, None
-        train = CustomDataset(xtrain, ytrain, train_transform)
-        val = CustomDataset(xval, yval, test_transform)
-        test = CustomDataset(xtest, ytest, test_transform)
-
-        trainloader = DataLoader(train, batch_size=bs, shuffle=True, num_workers=num_workers)
-        valloader = DataLoader(val, batch_size=bs, shuffle=True, num_workers=num_workers)
-        testloader = DataLoader(test, batch_size=bs, shuffle=True, num_workers=num_workers)
-
-    return trainloader, valloader, testloader
+    return train_loader, val_loader, test_loader

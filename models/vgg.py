@@ -1,12 +1,14 @@
+import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
+from utils.config_utils import ModelConfig
 
 
 class Vgg(nn.Module):
-    def __init__(self, drop=0.4, attention=False, normalize_attn=True, num_classes=7, **kwargs):
+    def __init__(self, config: ModelConfig):
         super().__init__()
 
-        self.conv1a = nn.Conv2d(in_channels=1, out_channels=64, kernel_size=3, padding=1)
+        self.conv1a = nn.Conv2d(in_channels=config.in_channels, out_channels=64, kernel_size=3, padding=1)
         self.conv1b = nn.Conv2d(64, out_channels=64, kernel_size=3, padding=1)
 
         self.conv2a = nn.Conv2d(64, 128, 3, padding=1)
@@ -32,11 +34,11 @@ class Vgg(nn.Module):
         self.bn4a = nn.BatchNorm2d(512)
         self.bn4b = nn.BatchNorm2d(512)
 
-        self.lin1 = nn.Linear(512 * 2 * 2, 4096)
+        self.lin1 = nn.Linear(512 * 3 * 3, 4096)
         self.lin2 = nn.Linear(4096, 4096)
 
-        self.drop = nn.Dropout(p=drop)
-        self.classify = nn.Linear(in_features=4096, out_features=num_classes, bias=True)
+        self.drop = nn.Dropout(p=config.dropout_p)
+        self.classify = nn.Linear(in_features=4096, out_features=config.n_classes, bias=True)
 
     def forward(self, x):
         x = F.relu(self.bn1a(self.conv1a(x)))
@@ -55,7 +57,7 @@ class Vgg(nn.Module):
         x = F.relu(self.bn4b(self.conv4b(x)))
         x = self.pool(x)
 
-        x = x.view(-1, 512 * 2 * 2)
+        x = x.view(-1, np.prod(x.shape[1:]))
         x = F.relu(self.drop(self.lin1(x)))
         x = F.relu(self.drop(self.lin2(x)))
 

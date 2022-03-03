@@ -18,7 +18,7 @@ hps = {
 
 }
 
-possible_nets = set(filename.split(".")[0] for filename in os.listdir('models'))
+possible_nets = set(filename.split(".")[0] for filename in os.listdir('../models'))
 
 
 def setup_hparams(name, network, **kwargs):

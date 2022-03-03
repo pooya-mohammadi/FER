@@ -4,3 +4,6 @@ __pycache__/
 checkpoints/
 outputs/
 datasets/*.csv
+/datasets/test/
+/datasets/train/
+/datasets/val/

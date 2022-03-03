@@ -1,20 +1,15 @@
 import os
 import torch
-import torch.nn as nn
-from sklearn.metrics import precision_score, f1_score, recall_score, confusion_matrix
 from torch.utils.data import DataLoader
-
-from data.fer2013 import get_dataloaders, load_data, RESCostumDataset, CustomDataset, prepare_data
+from data.fer2013 import get_data_loaders, load_data, RESCustomDataset, CustomDataset, prepare_data
 from tqdm import tqdm
 from utils.hparams import setup_hparams
 from utils.setup_network import setup_network
 import cv2
 from argparse import ArgumentParser
-from deep_utils import tensor_to_image
-from PIL import Image
+from deep_utils import tensor_to_image, log_print
 from torchvision import transforms
 import torch.nn.functional as F
-from models.resnet50_cbam import CbamBottleNeck
 from deep_utils import remove_create
 
 emotion_mapping = {0: 'Angry', 1: 'Disgust', 2: 'Fear', 3: 'Happy', 4: 'Sad', 5: 'Surprise', 6: 'Neutral'}
@@ -66,7 +61,7 @@ def evaluate(net, dataloader, device, name, save_path, thresh, Ncrop=False, ):
                 acc, pred = outputs[i].topk(1)
                 acc = acc.item()
                 pred = pred[0].item()
-                if pred != labels[i].item() and acc > thresh:
+                if pred == labels[i].item() and acc > thresh:
                     path = os.path.join(save_path, str(pred))
 
                     if not os.path.exists(path):
@@ -83,7 +78,7 @@ def evaluate(net, dataloader, device, name, save_path, thresh, Ncrop=False, ):
 def parser_args():
     parser = ArgumentParser()
     parser.add_argument("--model-name", default='vgg', type=str, help='The model that you want to run')
-    parser.add_argument("--batch-size", default=2, type=int, help='batch size')
+    parser.add_argument("--batch-size", default=16, type=int, help='batch size')
     parser.add_argument("--cut-mix", action='store_true', help='uses cut-mix augmentation, default is false')
     parser.add_argument("--residual-cbam", action='store_true', help='Adds residual cbam blocks to the architecture')
     parser.add_argument('--augment', action='store_true', help='applies augmentation methods, default is false')
@@ -94,7 +89,8 @@ def parser_args():
     parser.add_argument('--model-path', type=str, default='checkpoints', help='model-path directory.')
     parser.add_argument('--label-path', type=str, default='vgg-labels', help='label_path')
     parser.add_argument('--restore-epoch', type=int, default=0, help='restore model trained before')
-    parser.add_argument('--restore-path', type=str, default='vgg-best/vgg_best.pt', help='path to restore ')
+    parser.add_argument('--restore-path', type=str, default='../checkpoints/vgg/vgg_best.pt',
+                        help='path to restore checkpoints')
     return parser.parse_args()
 
 
@@ -141,6 +137,7 @@ if __name__ == "__main__":
     xtrain, ytrain = prepare_data(fer2013[fer2013['Usage'] == 'Training'])
     train = CustomDataset(xtrain, ytrain, test_transform)
     trainloader = DataLoader(train, batch_size=1, shuffle=False, num_workers=0, pin_memory=True)
+    log_print(logger, f"Removing {args.label_path} directory!")
     remove_create(args.label_path)
     evaluate(net,
              trainloader,
@@ -148,4 +145,4 @@ if __name__ == "__main__":
              name='Train',
              save_path=args.label_path,
              Ncrop=False,
-             thresh=0.8)
+             thresh=0.6)
