@@ -5,14 +5,18 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 from deep_utils import remove_create, repeat_dimension
+import sys
+from os.path import split
+
+sys.path.append(split(split(__file__)[0])[0])
+from settings import EMOTION_ID2NAME
 
 parser = ArgumentParser()
-parser.add_argument("--file-path",
-                    help="path to the input file, default ../datasets/fer2013.csv",
+parser.add_argument("--file_path", help="path to the input file, default ../datasets/fer2013.csv",
                     default="../datasets/fer2013.csv")
-parser.add_argument("--train-path", default="../datasets/train")
-parser.add_argument("--val-path", default="../datasets/val")
-parser.add_argument("--test-path", default="../datasets/test")
+parser.add_argument("--train_path", default="../datasets/train")
+parser.add_argument("--val_path", default="../datasets/val")
+parser.add_argument("--test_path", default="../datasets/test")
 
 
 def prepare_data(data):
@@ -32,15 +36,14 @@ def prepare_data(data):
 
 
 def main():
-
     args = parser.parse_args()
     df = pd.read_csv(args.file_path)
     train_images, train_labels = prepare_data(df[df['Usage'] == 'Training'])
     val_images, val_labels = prepare_data(df[df['Usage'] == 'PublicTest'])
     test_images, test_labels = prepare_data(df[df['Usage'] == 'PrivateTest'])
-    save_array_images(args.train_path, emotion_mapping, train_images, train_labels)
-    save_array_images(args.val_path, emotion_mapping, val_images, val_labels)
-    save_array_images(args.test_path, emotion_mapping, test_images, test_labels)
+    save_array_images(args.train_path, EMOTION_ID2NAME, train_images, train_labels)
+    save_array_images(args.val_path, EMOTION_ID2NAME, val_images, val_labels)
+    save_array_images(args.test_path, EMOTION_ID2NAME, test_images, test_labels)
 
 
 def save_array_images(root_dir, emotion_mapping, train_images, train_labels):

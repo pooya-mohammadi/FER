@@ -2,7 +2,7 @@ import warnings
 from tqdm import tqdm
 import numpy as np
 import torch
-from torch.cuda.amp import autocast
+from deep_utils import color_str
 
 warnings.filterwarnings("ignore")
 
@@ -38,15 +38,21 @@ def train(net,
     loss_tr, correct_count, n_samples = 0.0, 0.0, 0.0
 
     for i, data in tqdm(enumerate(dataloader), total=len(dataloader), leave=False,
-                        desc=f"Epoch: {epoch}/{config.epochs} Training", position=0):
+                        desc=color_str(f"Epoch: {epoch}/{config.epochs} Training", color='blue'), position=0,
+                        colour='blue'):
         inputs, labels = data
         inputs, labels = inputs.to(config.device), labels.to(config.device)
-        outputs = net(inputs)
-        loss = criterion(outputs, labels)
+
+        # Train with FP16
+        with torch.cuda.amp.autocast():
+            outputs = net(inputs)
+            loss = criterion(outputs, labels)
+
+        optimizer.zero_grad()
         scaler.scale(loss).backward()
         scaler.step(optimizer)
         scaler.update()
-        optimizer.zero_grad()
+
         loss_tr += loss.item()
         _, preds = torch.max(outputs.data, 1)
         correct_count += (preds == labels).sum().item()
@@ -61,7 +67,9 @@ def evaluate(net, dataloader, criterion, epoch, config):
     net = net.eval()
     with torch.no_grad():
         loss_, correct_count, n_samples = 0.0, 0.0, 0.0
-        for data in tqdm(dataloader, total=len(dataloader), leave=False, desc=f"Epoch {epoch}/{config.epochs} Evaluation", position=0):
+        for data in tqdm(dataloader, total=len(dataloader), leave=False,
+                         desc=color_str(f"Epoch {epoch}/{config.epochs} Evaluation", color='blue'),
+                         position=0, colour='blue'):
             inputs, labels = data
             inputs, labels = inputs.to(config.device, non_blocking=True), labels.to(config.device, non_blocking=True)
             outputs = net(inputs)
