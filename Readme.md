@@ -4,7 +4,7 @@ In this repository we present our experiments on fer-2013 dataset. Different mod
 1. VGG
 
 and different augmentation methods like:
-3. CutMix 
+2. CutMix 
  
 are used in this experiment and more methods are yet to be tried. In case of any errors, please kindly open an issue or 
 create a pull request.
