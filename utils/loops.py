@@ -6,6 +6,9 @@ from deep_utils import color_str
 
 warnings.filterwarnings("ignore")
 
+# def accuracy(y_true, y_predict):
+
+
 
 def rand_bbox(size, lam):
     W = size[2]
@@ -54,7 +57,7 @@ def train(net,
         scaler.update()
 
         loss_tr += loss.item()
-        _, preds = torch.max(outputs.data, 1)
+        _, preds = torch.max(outputs.data, dim=1)
         correct_count += (preds == labels).sum().item()
         n_samples += labels.size(0)
 

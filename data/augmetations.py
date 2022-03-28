@@ -29,5 +29,7 @@ def get_normal_aug(img_h, img_w, mean, std, **kwargs):
 
 
 def get_augmentation(aug_name, img_h, img_w, mean, std, **kwargs):
-    augmentations = dict(normal=get_normal_aug)
+    augmentations = dict(
+        normal=get_normal_aug,
+    )
     return augmentations[aug_name](img_h=img_h, img_w=img_w, mean=mean, std=std, **kwargs)

@@ -46,11 +46,15 @@ def run(config,
         # logger
         lr = optimizer.param_groups[0]['lr']
         log_print(logger,
-                  color_str(f"[Epoch] {epoch}/{config.epochs} -> [ETA]: {int(time.time() - tic)}S - [train-acc]: {acc:0.2f} - [train-loss]: {loss:0.4f} - [val-acc]: {val_acc:0.2f} - [val-loss]: {val_loss:0.4f} - [lr]: {lr:0.6f}", color='green'))
+                  color_str(
+                      f"[Epoch] {epoch}/{config.epochs} -> [ETA]: {int(time.time() - tic)}S - [train-acc]: {acc:0.2f} - [train-loss]: {loss:0.4f} - [val-acc]: {val_acc:0.2f} - [val-loss]: {val_loss:0.4f} - [lr]: {lr:0.6f}",
+                      color='green'))
 
-    # Calculate performance on test set
-    test_loss, test_acc = evaluate(model, test_loader, criterion, config.epochs, config)
-    log_print(logger, color_str(f"[ETA]:{time.time() - total_tic}S - [test-acc]: {test_acc:0.2f} - [test-loss]: {test_loss:0.4f}", color='red'))
+    # Calculate the model's performance on the test set
+    test_acc, test_loss = evaluate(model, test_loader, criterion, config.epochs, config)
+    log_print(logger, color_str(
+        f"[ETA]: {time.time() - total_tic}S - [test-acc]: {test_acc:0.2f} - [test-loss]: {test_loss:0.4f}",
+        color='red'))
 
 
 def main():
@@ -73,7 +77,7 @@ def main():
     model = get_model(model_name=config.model.name, device=config.device, model_config=config.model)
 
     model_checkpointer, optimizer, lr_scheduler, csv_logger, tensorboard = get_opt_callbacks(config,
-                                                                                             model_path=checkpoint_path / "weights" / "model",
+                                                                                             model_path=checkpoint_path / "weights" / "model.pt",
                                                                                              csv_path=checkpoint_path / "log.csv",
                                                                                              tensorboard_dir=checkpoint_path / 'tensorboard',
                                                                                              net=model,

@@ -1,3 +1,4 @@
+import torch
 from models import vgg, efn, vgg_attention, vgg_bam, vgg_cbam, vgg_cbam_modified, vgg_cbam_extended, resnet50_cbam, \
     resnet50
 
@@ -14,8 +15,11 @@ nets = {
 }
 
 
-def get_model(model_name, model_config, device=None):
+def get_model(model_name, model_config, device=None, weight_path=None):
     model = nets[model_name](model_config)
     if device is not None:
         model = model.to(device)
+    if weight_path:
+        weights = torch.load(weight_path, map_location=device)["model_state_dict"]
+        model.load_state_dict(weights)
     return model

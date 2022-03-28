@@ -18,7 +18,7 @@ optimizer:
   weight_decay: 0.0001
   mode: "max"
   lr_decay: 0.1
-  lr_patience: 25
+  lr_patience: 15
   min_lr: 0.00001
   verbose: true
   monitor_val: none
@@ -35,7 +35,7 @@ dataset:
   val_shuffle: true
   test_shuffle: false
   batch_size: 32
-  num_workers: 6
+  num_workers: 0
 
 
 augmentation:

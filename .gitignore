@@ -7,3 +7,4 @@ datasets/*.csv
 /datasets/test/
 /datasets/train/
 /datasets/val/
+/datasets/out

@@ -5,15 +5,6 @@ import sys
 from deep_utils import KeyValStruct, YamlConfig
 
 
-# from .mobilenets import mobilenets
-# from .resnet50 import resnet50
-
-# configs = dict(
-#     mobilenets=mobilenets,
-#     resnet50=resnet50
-# )
-
-
 def get_main_config(model_name='mobilenet'):
     id_ = str(datetime.now().date()) + "_" + str(datetime.now().time())
     main_config = dict(

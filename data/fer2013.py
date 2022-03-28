@@ -7,7 +7,7 @@ import torch
 from torch.utils.data import Dataset
 from torch.utils.data import ConcatDataset
 import cv2
-from deep_utils import crawl_directory_dataset, log_print
+from deep_utils import crawl_directory_dataset, log_print, value_error_log
 from data.augmetations import get_augmentation
 from settings import EMOTION_NAME2ID
 from utils.config_utils import Config
@@ -148,7 +148,7 @@ def prepare_data(data):
     return image_array, image_label
 
 
-def get_data_loaders(config: Config, logger=None, verbose=1):
+def get_data_loaders(config: Config, dataloader_name=None, logger=None, verbose=1):
     train_transform, val_transform, test_transform = get_augmentation(config.augmentation.name,
                                                                       img_h=config.dataset.img_h,
                                                                       img_w=config.dataset.img_w,
@@ -172,5 +172,14 @@ def get_data_loaders(config: Config, logger=None, verbose=1):
                             num_workers=config.dataset.num_workers)
     test_loader = DataLoader(test_dataset, config.dataset.batch_size, config.dataset.test_shuffle,
                              num_workers=config.dataset.num_workers)
-
+    if dataloader_name:
+        if dataloader_name == 'train':
+            loader = train_loader
+        elif dataloader_name == 'val':
+            loader = val_loader
+        elif dataloader_name == 'test':
+            loader = test_loader
+        else:
+            value_error_log(logger, f"{dataloader_name} is not valid")
+        return loader
     return train_loader, val_loader, test_loader
