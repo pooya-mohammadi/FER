@@ -5,18 +5,20 @@ from torch.utils.data import DataLoader
 import numpy as np
 import torch
 from torch.utils.data import Dataset
+import torch.nn.functional as F
 from torch.utils.data import ConcatDataset
 import cv2
-from deep_utils import crawl_directory_dataset, log_print, value_error_log
+from deep_utils import crawl_directory_dataset, log_print, value_error_log, CutMixTorch
 from data.augmetations import get_augmentation
 from settings import EMOTION_NAME2ID
 from utils.config_utils import Config
 
 
 class CustomDataset(Dataset):
-    def __init__(self, images, labels, transform=None, logger=None, verbose=1):
+    def __init__(self, images, labels, transform=None, n_classes=7, logger=None, verbose=1):
         self.images = images
         self.labels = labels
+        self.n_classes = n_classes
         self.transform = transform
         log_print(logger, f"Successfully created {self.__class__.__name__}, samples: {len(self)}", verbose=verbose)
 
@@ -30,9 +32,16 @@ class CustomDataset(Dataset):
         img = cv2.imread(img_address)[..., ::-1]  # BGR2RGB
         img = self.transform(image=img)['image']
         label = torch.tensor(self.labels[idx]).type(torch.long)
+        label = F.one_hot(label, num_classes=self.n_classes)
         sample = (img, label)
 
         return sample
+
+    def collate_fn(self, data):
+        images = torch.concat([d[0].unsqueeze(0) for d in data])
+        labels = torch.concat([d[1].unsqueeze(0) for d in data])
+        cutmix_images, cutmix_labels = CutMixTorch.cls_cutmix_batch(a_images=images, a_labels=labels)
+        return cutmix_images, cutmix_labels
 
 
 # class RESCustomDataset(Dataset):
@@ -167,11 +176,11 @@ def get_data_loaders(config: Config, dataloader_name=None, logger=None, verbose=
     test_dataset = CustomDataset(test_address, test_labels, transform=test_transform, logger=logger)
 
     train_loader = DataLoader(train_dataset, config.dataset.batch_size, config.dataset.train_shuffle,
-                              num_workers=config.dataset.num_workers)
+                              num_workers=config.dataset.num_workers, collate_fn=train_dataset.collate_fn)
     val_loader = DataLoader(val_dataset, config.dataset.batch_size, config.dataset.val_shuffle,
-                            num_workers=config.dataset.num_workers)
+                            num_workers=config.dataset.num_workers, collate_fn=val_dataset.collate_fn)
     test_loader = DataLoader(test_dataset, config.dataset.batch_size, config.dataset.test_shuffle,
-                             num_workers=config.dataset.num_workers)
+                             num_workers=config.dataset.num_workers, collate_fn=test_dataset.collate_fn)
     if dataloader_name:
         if dataloader_name == 'train':
             loader = train_loader

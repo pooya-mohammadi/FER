@@ -58,7 +58,7 @@ def train(net,
 
         loss_tr += loss.item()
         _, preds = torch.max(outputs.data, dim=1)
-        correct_count += (preds == labels).sum().item()
+        correct_count += (preds == torch.max(labels, dim=1)[1]).sum().item()
         n_samples += labels.size(0)
 
     acc = 100 * correct_count / n_samples
@@ -79,7 +79,7 @@ def evaluate(net, dataloader, criterion, epoch, config):
             loss = criterion(outputs, labels)
             loss_ += loss.item()
             _, preds = torch.max(outputs.data, 1)
-            correct_count += (preds == labels).sum().item()
+            correct_count += (preds == torch.max(labels, dim=1)[1]).sum().item()
             n_samples += labels.size(0)
 
     acc = 100 * correct_count / n_samples

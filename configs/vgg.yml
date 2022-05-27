@@ -35,7 +35,7 @@ dataset:
   val_shuffle: true
   test_shuffle: false
   batch_size: 32
-  num_workers: 0
+  num_workers: 12
 
 
 augmentation:
